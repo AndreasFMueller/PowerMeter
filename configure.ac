@@ -12,7 +12,7 @@ AC_CONFIG_HEADERS([config.h])
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
-AC_CHECK_PROGS(MYSQL_CONFIG, mysql_config)
+AC_CHECK_PROGS(MARIADB_CONFIG, mariadb-config)
 
 # Checks for libraries.
 
@@ -41,9 +41,9 @@ else
 fi
 
 # check for mysql library settings
-CFLAGS="${CFLAGS} `mysql_config --cflags`"
-CXXFLAGS="${CXXFLAGS} `mysql_config --cflags`"
-LIBS="${LIBS} `mysql_config --libs`"
+CFLAGS="${CFLAGS} `${MARIADB_CONFIG} --cflags`"
+CXXFLAGS="${CXXFLAGS} `${MARIADB_CONFIG} --cflags`"
+LIBS="${LIBS} `${MARIADB_CONFIG} --libs`"
 
 AC_CONFIG_FILES([Makefile])
 

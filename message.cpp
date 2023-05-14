@@ -38,6 +38,14 @@ void	message::accumulate(const std::chrono::duration<float>& duration,
 	}
 }
 
+void	message::finalize(const std::string& name, float factor) {
+	std::map<std::string, float>::const_iterator	i = find(name);
+	if (i == end()) {
+		return;
+	}
+	operator[](name) = i->second * factor;
+}
+
 //
 // messagequeue implementation
 //

@@ -15,5 +15,6 @@ bin_PROGRAMS = powermeter
 
 powermeter_SOURCES = powermeterd.cpp
 powermeter_DEPENDENCIES = libpowermeter.la
+powermeter_LDFLAGS = -L. -lpowermeter
 
 
