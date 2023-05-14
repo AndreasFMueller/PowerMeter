@@ -1,0 +1,5 @@
+CFLAGS="-g -Wall -O"
+CXXFLAGS="-g -Wall -O --std=c++11"
+export CFLAGS CXXFLAGS
+./configure
+

@@ -1,0 +1,3 @@
+Programm to read data from an ALE3D5F 3-phase power meter and drop
+it into the mysql database for later graphing
+
