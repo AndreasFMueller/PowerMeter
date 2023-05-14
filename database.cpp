@@ -13,12 +13,12 @@ database::database(const std::string& hostname, const std::string& dbname,
 	messagequeue& queue)
 	: _hostname(hostname), _dbname(dbname), _dbuser(dbuser),
 	  _dbpassword(dbpassword), _queue(queue) {
-	// create database connection
+	// XXX create database connection
 
-	// create array of identifiers for the data to be written
-	// to the database
+	// XXX create array of identifiers for the data to be written
+	// XXX to the database
 
-	// launch the thread
+	// XXX launch the thread
 	std::unique_lock<std::mutex>	lock(_mutex);
 	_active = true;
 	_thread = std::thread(database::launch, this);
@@ -43,7 +43,7 @@ void	database::launch(database *d) {
 }
 
 void	database::store(const message& m) {
-	// perform storing the data
+	// XXX perform storing the data
 }
 
 void	database::run() {
