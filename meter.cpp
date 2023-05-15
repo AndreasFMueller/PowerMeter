@@ -4,6 +4,7 @@
  * (c) 2023 Prof Dr Andreas Müller
  */
 #include <meter.h>
+#include <stdexcept>
 
 namespace powermeter {
 
@@ -18,14 +19,22 @@ void	meter::launch(meter *m) {
 }
 
 meter::meter(const std::string& hostname, unsigned short port,
-	unsigned char deviceid, messagequeue& queue)
+	int deviceid, messagequeue& queue)
 	: _hostname(hostname), _port(port), _deviceid(deviceid),
 	  _queue(queue) {
 
 	// set up the connection
 	_mb = NULL;
-	_mb = modbus_new_tcp(hostname.c_str(), port);
-	modbus_connect(_mb);
+	_mb = modbus_new_tcp(hostname.c_str(), _port);
+	if (NULL == _mb) {
+		throw std::runtime_error("cannot create a new modbus context");
+	}
+	if (-1 == modbus_connect(_mb)) {
+		throw std::runtime_error("cannot connect");
+	}
+	if (-1 == modbus_set_slave(_mb, _deviceid)) {
+		throw std::runtime_error("cannot set device id");
+	}
 
 	// run the thread
 	std::unique_lock<std::mutex>	lock(_mutex);
@@ -136,7 +145,7 @@ message	meter::integrate() {
 		
 		uint16_t	registers[53];
 		// read a message
-		modbus_read_registers(_mb, 0, 52, registers);
+		modbus_read_registers(_mb, 0, 53, registers);
 
 		// end time for the integration
 		std::chrono::duration<float>	delta(std::chrono::steady_clock::now() - previous);

@@ -21,7 +21,7 @@ class meter {
 	// configuration data
 	std::string		_hostname;
 	unsigned short		_port;
-	unsigned char		_deviceid;
+	int			_deviceid;
 	messagequeue&		_queue;
 	// the connection
 	modbus_t		*_mb;
@@ -33,7 +33,7 @@ class meter {
 	message	integrate();
 public:
 	meter(const std::string& hostname, unsigned short port,
-		unsigned char deviceid, messagequeue& queue);
+		int deviceid, messagequeue& queue);
 	~meter();
 	static void	launch(meter* m);
 	void	run();

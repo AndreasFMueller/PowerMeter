@@ -11,10 +11,10 @@ libpowermeter_la_SOURCES = database.cpp message.cpp meter.cpp debug.c
 
 noinst_HEADERS = database.h debug.h message.h meter.h
 
-bin_PROGRAMS = powermeter
+bin_PROGRAMS = powermeterd
 
-powermeter_SOURCES = powermeterd.cpp
-powermeter_DEPENDENCIES = libpowermeter.la
-powermeter_LDFLAGS = -L. -lpowermeter
+powermeterd_SOURCES = powermeterd.cpp
+powermeterd_DEPENDENCIES = libpowermeter.la
+powermeterd_LDFLAGS = -L. -lpowermeter
 
 
