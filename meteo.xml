@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<meteo>
+  <database>
+    <hostname>ferdinand</hostname>
+    <port>3307</port>
+    <user>meteo</user>
+    <password>Public-4711</password>
+    <prefix>meteo</prefix>
+  </database>
+  <station name="Bubental">
+    <sensors>
+      <sensor name="powermeter">
+	<average name="urms_phase1" base="voltage" operator="avg"/>
+	<average name="urms_phase2" base="voltage" operator="avg"/>
+	<average name="urms_phase3" base="voltage" operator="avg"/>
+	<average name="irms_phase1" base="current" operator="avg"/>
+	<average name="irms_phase2" base="current" operator="avg"/>
+	<average name="irms_phase3" base="current" operator="avg"/>
+	<average name="prms_phase1" base="power" operator="avg"/>
+	<average name="prms_phase1_min" base="power" operator="min"/>
+	<average name="prms_phase1_max" base="power" operator="max"/>
+	<average name="prms_phase2" base="power" operator="avg"/>
+	<average name="prms_phase2_min" base="power" operator="min"/>
+	<average name="prms_phase2_max" base="power" operator="max"/>
+	<average name="prms_phase3" base="power" operator="avg"/>
+	<average name="prms_phase3_min" base="power" operator="min"/>
+	<average name="prms_phase3_max" base="power" operator="max"/>
+	<average name="qrms_phase1" base="powerfactor" operator="avg"/>
+	<average name="qrms_phase2" base="powerfactor" operator="avg"/>
+	<average name="qrms_phase3" base="powerfactor" operator="avg"/>
+	<average name="cosphi_phase1" base="cosphi" operator="avg"/>
+	<average name="cosphi_phase2" base="cosphi" operator="avg"/>
+	<average name="cosphi_phase3" base="cosphi" operator="avg"/>
+	<average name="prms_total" base="power" operator="avg"/>
+	<average name="prms_total_min" base="power" operator="min"/>
+	<average name="prms_total_max" base="power" operator="max"/>
+	<average name="qrms_total" base="voltage" operator="avg"/>
+      </sensor>
+    </sensors>
+  </station>
+</meteo>

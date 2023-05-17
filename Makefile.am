@@ -2,8 +2,8 @@
 # Makefile for the PowerMeter project
 #
 # (c) 2023 Prof Dr Andreas Müller
-#
-EXTRA_DIST = SBC_Energymeter-ALE3-Modbus_eng_tds.pdf
+# 
+EXTRA_DIST = SBC_Energymeter-ALE3-Modbus_eng_tds.pdf meteo.xml
 
 noinst_LTLIBRARIES = libpowermeter.la
 

@@ -21,9 +21,12 @@ static struct option	longopts[] = {
 { "dbname",		required_argument,	NULL,		'D' },
 { "dbuser",		required_argument,	NULL,		'U' },
 { "dbpassword",		required_argument,	NULL,		'P' },
+{ "dbport",		required_argument,	NULL,		'Q' },
 { "meterhostname",	required_argument,	NULL,		'm' },
 { "meterport",		required_argument,	NULL,		'p' },
 { "meterid",		required_argument,	NULL,		'i' },
+{ "stationname",	required_argument,	NULL,		'S' },
+{ "sensorname",		required_argument,	NULL,		's' },
 { "version",		no_argument,		NULL,		'V' },
 { "foreground",		no_argument,		NULL,		'f' },
 { NULL,			0,			NULL,		 0  }
@@ -41,13 +44,16 @@ int	main(int argc, char *argv[]) {
 	std::string	dbname;
 	std::string	dbuser;
 	std::string	dbpassword;
+	int		dbport = 3307;
+	std::string	stationname;
+	std::string	sensorname;
 	std::string	meterhostname;
 	unsigned short	meterport;
 	unsigned char	meterid;
 	bool	foreground = false;
 
 	// read parameters from the command line
-	while (EOF != (c = getopt_long(argc, argv, "dH:D:U:P:m:p:i:V",
+	while (EOF != (c = getopt_long(argc, argv, "dH:D:U:P:Q:S:s::m:p:i:V",
 		longopts, NULL)))
 		switch (c) {
 		case 'd':
@@ -64,6 +70,15 @@ int	main(int argc, char *argv[]) {
 			break;
 		case 'P':
 			dbpassword = std::string(optarg);
+			break;
+		case 'Q':
+			dbport = std::stoi(optarg);
+			break;
+		case 'S':
+			stationname = std::string(optarg);
+			break;
+		case 's':
+			sensorname = std::string(optarg);
 			break;
 		case 'm':
 			meterhostname = std::string(optarg);
@@ -101,7 +116,8 @@ int	main(int argc, char *argv[]) {
 	messagequeue	queue;
 
 	// create the destination, i.e. the thread writing into the database
-	database	db(dbhostname, dbname, dbuser, dbpassword, queue);
+	database	db(dbhostname, dbname, dbuser, dbpassword, dbport,
+				stationname, sensorname, queue);
 	
 	// create the source, i.e. the thread reading from the power meter
 	meter	mtr(meterhostname, meterport, meterid, queue);
