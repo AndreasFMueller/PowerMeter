@@ -5,6 +5,7 @@
  */
 #include <database.h>
 #include <mysql.h>
+#include <format.h>
 
 namespace powermeter {
 
@@ -38,11 +39,14 @@ database::database(const std::string& hostname, const std::string& dbname,
 				"from station st, sensor se "
 				"where se.stationid = st.id "
 				"  and st.name = ?"
-				"  and se.name = ?");
+				"  and se.name = ?"
+				" ");
 	int	rc = mysql_stmt_prepare(stmt, query.c_str(), query.size());
 	if (0 != rc) {
+		std::string	msg = stringprintf("cannot prepare query '%s': "
+			"%s", query.c_str(), mysql_error(_mysql));
 		mysql_stmt_close(stmt);
-		throw std::runtime_error("cannot prepare statement");
+		throw std::runtime_error(msg);
 	}
 
 	// create bind structure
@@ -51,19 +55,19 @@ database::database(const std::string& hostname, const std::string& dbname,
 
 	char	stationbuffer[_stationname.size() + 1];
 	strcpy(stationbuffer, _stationname.c_str());
-	unsigned long	stationlength = _stationname.size() + 1;
+	unsigned long	stationlength = _stationname.size();
 	parameters[0].buffer = stationbuffer;
-	parameters[0].buffer_length = _stationname.size() + 1;
+	parameters[0].buffer_length = stationlength + 1;
 	parameters[0].length = &stationlength;
-	parameters[0].buffer_type = MYSQL_TYPE_STRING;
+	parameters[0].buffer_type = MYSQL_TYPE_VAR_STRING;
 
 	char	sensorbuffer[_sensorname.size() + 1];
 	strcpy(stationbuffer, _sensorname.c_str());
-	unsigned long	sensorlength = _sensorname.size() + 1;
+	unsigned long	sensorlength = _sensorname.size();
 	parameters[1].buffer = sensorbuffer;
-	parameters[1].buffer_length = _sensorname.size() + 1;
+	parameters[1].buffer_length = sensorlength + 1;
 	parameters[1].length = &sensorlength;
-	parameters[1].buffer_type = MYSQL_TYPE_STRING;
+	parameters[1].buffer_type = MYSQL_TYPE_VAR_STRING;
 
 	// bind the parameters
 	rc = mysql_stmt_bind_param(stmt, parameters);
@@ -75,8 +79,10 @@ database::database(const std::string& hostname, const std::string& dbname,
 	// execute the statement
 	rc = mysql_stmt_execute(stmt);
 	if (0 != rc) {
+		std::string	msg = stringprintf("cannot execute: %s",
+			mysql_error(_mysql));
 		mysql_stmt_close(stmt);
-		throw std::runtime_error("cannot execute");
+		throw std::runtime_error(msg);
 	}
 
 	// bind the result fields

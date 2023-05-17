@@ -16,15 +16,12 @@ config.sub
 configure
 configure.scan
 configure~
-database.lo
-debug.lo
 depcomp
 install-sh
 libpowermeter.la
 libtool
 ltmain.sh
-message.lo
-meter.lo
+*.lo
 missing
 stamp-h1
 .deps
