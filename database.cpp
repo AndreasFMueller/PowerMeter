@@ -145,7 +145,52 @@ void	database::launch(database *d) {
 }
 
 void	database::store(const message& m) {
-	// XXX perform storing the data
+	// prepare a statment
+	MYSQL_STMT	*stmt = mysql_stmt_init(_mysql);
+	if (NULL == stmt) {
+		throw std::runtime_error("cannot construct a statement");
+	}
+	std::string	query(
+		"insert into sdata(timekey, sensorid, fieldid, value) "
+		"values (?, ?, ?, ?)");
+	int	rc = mysql_stmt_prepare(stmt, query.c_str(), query.size());
+	if (0 != rc) {
+		mysql_stmt_close(stmt);
+		throw std::runtime_error("cannot prepare the statement");
+	}
+
+	// bind the parameters
+	MYSQL_BIND	parameters[4];
+	memset(parameters, 0, sizeof(parameters));
+	long long	timekey = std::chrono::duration_cast<std::chrono::seconds>(m.when().time_since_epoch()).count();
+	parameters[0].buffer = &timekey;
+	parameters[0].buffer_type = MYSQL_TYPE_LONGLONG;
+	parameters[1].buffer = &_sensorid;
+	parameters[1].buffer_type = MYSQL_TYPE_TINY;
+	char	fid;
+	parameters[2].buffer = &fid;
+	parameters[2].buffer_type = MYSQL_TYPE_TINY;
+	float	value;
+	parameters[3].buffer = &value;
+	parameters[3].buffer_type = MYSQL_TYPE_FLOAT;
+	rc = mysql_stmt_bind_param(stmt, parameters);
+	if (0 != rc) {
+		throw std::runtime_error("cannot bind parameters");
+	}
+
+	// go through the message
+	for (auto i = m.begin(); i != m.end(); i++) {
+		fid = fieldid(i->first);
+		value = i->second;
+		rc = mysql_stmt_execute(stmt);
+		if (0 != rc) {
+			mysql_stmt_close(stmt);
+			throw std::runtime_error("execute failed");
+		}
+	}
+	
+	// cleanup
+	mysql_stmt_close(stmt);
 }
 
 void	database::run() {
@@ -154,6 +199,14 @@ void	database::run() {
 		// send the message to the database
 		store(m);
 	}
+}
+
+char	database::fieldid(const std::string& fieldname) const {
+	auto	i = _fields.find(fieldname);
+	if (i == _fields.end()) {
+		throw std::runtime_error("field name not found");
+	}
+	return i->second;
 }
 
 } // namespace powermeter

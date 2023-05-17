@@ -23,9 +23,9 @@ class database {
 	std::string	_dbpassword;
 	int		_dbport;
 	std::string	_stationname;
-	unsigned char	_stationid;
+	char		_stationid;
 	std::string	_sensorname;
-	unsigned char	_sensorid;
+	char		_sensorid;
 	std::map<std::string, int>	_fields;
 	MYSQL		*_mysql;
 public:
@@ -33,9 +33,9 @@ public:
 	const std::string&	dbname() const { return _dbname; }
 	const std::string&	dbuser() const { return _dbuser; }
 	const std::string&	dbpassword() const { return _dbpassword; }
-	const unsigned char&	stationid() const { return _stationid; }
-	const unsigned char&	sensorid() const { return _sensorid; }
-	unsigned char	fieldid(const std::string& fieldname) const;
+	const char&	stationid() const { return _stationid; }
+	const char&	sensorid() const { return _sensorid; }
+	char	fieldid(const std::string& fieldname) const;
 private:
 	// the queue
 	messagequeue&	_queue;
