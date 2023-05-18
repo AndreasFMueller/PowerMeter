@@ -6,17 +6,19 @@
 #include <database.h>
 #include <mysql.h>
 #include <format.h>
+#include <debug.h>
 
 namespace powermeter {
 
-database::database(const std::string& hostname, const std::string& dbname,
-	const std::string& dbuser, const std::string& dbpassword,
-	int dbport,
-	const std::string& stationname, const std::string& sensorname,
+database::database(const configuration& config,
 	messagequeue& queue)
-	: _hostname(hostname), _dbname(dbname), _dbuser(dbuser),
-	  _dbpassword(dbpassword), _dbport(dbport),
-	  _stationname(stationname), _sensorname(sensorname),
+	: _hostname(config.stringvalue("dbhostname")),
+	  _dbname(config.stringvalue("dbname")),
+	  _dbuser(config.stringvalue("dbuser")),
+	  _dbpassword(config.stringvalue("dbpassword")),
+	  _dbport(config.intvalue("dbport")),
+	  _stationname(config.stringvalue("stationname")),
+	  _sensorname(config.stringvalue("sensorname")),
 	  _queue(queue) {
 	// create database connection
 	_mysql = mysql_init(NULL);
@@ -60,21 +62,27 @@ database::database(const std::string& hostname, const std::string& dbname,
 	parameters[0].buffer_length = stationlength + 1;
 	parameters[0].length = &stationlength;
 	parameters[0].buffer_type = MYSQL_TYPE_VAR_STRING;
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "station name: '%s'",
+		parameters[0].buffer);
 
 	char	sensorbuffer[_sensorname.size() + 1];
-	strcpy(stationbuffer, _sensorname.c_str());
+	strcpy(sensorbuffer, _sensorname.c_str());
 	unsigned long	sensorlength = _sensorname.size();
 	parameters[1].buffer = sensorbuffer;
 	parameters[1].buffer_length = sensorlength + 1;
 	parameters[1].length = &sensorlength;
 	parameters[1].buffer_type = MYSQL_TYPE_VAR_STRING;
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "sensor name: '%s'",
+		parameters[1].buffer);
 
 	// bind the parameters
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "binding parameters");
 	rc = mysql_stmt_bind_param(stmt, parameters);
 	if (0 != rc) {
 		mysql_stmt_close(stmt);
 		throw std::runtime_error("cannot bind");
 	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "bind complete");
 
 	// execute the statement
 	rc = mysql_stmt_execute(stmt);
@@ -84,9 +92,13 @@ database::database(const std::string& hostname, const std::string& dbname,
 		mysql_stmt_close(stmt);
 		throw std::runtime_error(msg);
 	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "station '%s' %d, sensor '%s' %d",
+		_stationname.c_str(), _stationid,
+		_sensorname.c_str(), _sensorid);
 
 	// bind the result fields
 	MYSQL_BIND	results[2];
+	memset(results, 0, sizeof(results));
 	memset(&_stationid, 0, sizeof(_stationid));
 	results[0].buffer = &_stationid;
 	results[0].buffer_length = sizeof(_stationid);
@@ -112,7 +124,7 @@ database::database(const std::string& hostname, const std::string& dbname,
 	mysql_stmt_close(stmt);
 
 	// get the field information
-	query = std::string("select name, id from mfield from mfield");
+	query = std::string("select name, id from mfield");
 	mysql_store_result(_mysql);
 	if (mysql_query(_mysql, query.c_str())) {
 		throw std::runtime_error("cannot retrieve field information");
@@ -123,10 +135,11 @@ database::database(const std::string& hostname, const std::string& dbname,
 		std::string	name = std::string(row[0]);
 		int	id = std::stoi(row[1]);
 		_fields.insert(std::make_pair(name, id));
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "'%s' -> %d", name.c_str(), id);
 	}
 	mysql_free_result(mres);
 
-	// XXX launch the thread
+	// launch the thread
 	std::unique_lock<std::mutex>	lock(_mutex);
 	_active = true;
 	_thread = std::thread(database::launch, this);
@@ -142,15 +155,18 @@ database::~database() {
 
 void	database::launch(database *d) {
 	try {
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "launch database thread");
 		d->run();
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "database thread terminates");
 	} catch (const std::exception& x) {
-		// XXX report database error exception
+		debug(LOG_ERR, DEBUG_LOG, 0, "database thread fails with exception %s", x.what());
 	} catch (...) {
-		// XXX report database error
+		debug(LOG_ERR, DEBUG_LOG, 0, "database thread fails");
 	}
 }
 
 void	database::store(const message& m) {
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "storing a new message");
 	// prepare a statment
 	MYSQL_STMT	*stmt = mysql_stmt_init(_mysql);
 	if (NULL == stmt) {
@@ -169,6 +185,7 @@ void	database::store(const message& m) {
 	MYSQL_BIND	parameters[4];
 	memset(parameters, 0, sizeof(parameters));
 	long long	timekey = std::chrono::duration_cast<std::chrono::seconds>(m.when().time_since_epoch()).count();
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "timekey = %ld", timekey);
 	parameters[0].buffer = &timekey;
 	parameters[0].buffer_type = MYSQL_TYPE_LONGLONG;
 	parameters[1].buffer = &_sensorid;
@@ -183,9 +200,12 @@ void	database::store(const message& m) {
 	if (0 != rc) {
 		throw std::runtime_error("cannot bind parameters");
 	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "parameters bound");
 
 	// go through the message
 	for (auto i = m.begin(); i != m.end(); i++) {
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "store value for %s",
+			i->first.c_str());
 		fid = fieldid(i->first);
 		value = i->second;
 		rc = mysql_stmt_execute(stmt);
@@ -194,15 +214,19 @@ void	database::store(const message& m) {
 			throw std::runtime_error("execute failed");
 		}
 	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "all values stored");
 	
 	// cleanup
 	mysql_stmt_close(stmt);
 }
 
 void	database::run() {
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "running database thread");
 	while (_active) {
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "waiting for message");
 		message	m = _queue.extract();
 		// send the message to the database
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "storing message");
 		store(m);
 	}
 }

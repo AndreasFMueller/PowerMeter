@@ -7,9 +7,21 @@ EXTRA_DIST = SBC_Energymeter-ALE3-Modbus_eng_tds.pdf meteo.xml
 
 noinst_LTLIBRARIES = libpowermeter.la
 
-libpowermeter_la_SOURCES = database.cpp message.cpp meter.cpp debug.c format.cpp
+libpowermeter_la_SOURCES =						\
+	configuration.cpp						\
+	database.cpp							\
+	debug.c								\
+	format.cpp							\
+	message.cpp							\
+	meter.cpp
 
-noinst_HEADERS = database.h debug.h message.h meter.h format.h
+noinst_HEADERS =							\
+	configuration.h							\
+	database.h							\
+	debug.h								\
+	format.h							\
+	message.h							\
+	meter.h
 
 bin_PROGRAMS = powermeterd
 
@@ -23,17 +35,9 @@ dbuser = powermaster
 dbpassword = tom,ri5tentR
 dbport = 3307
 
-test:	powermeterd
+test:	powermeterd powermeter.config
 	./powermeterd --foreground \
-		--dbhostname=$(dbhost) \
-		--dbname=$(dbname) \
-		--dbuser=$(dbuser) \
-		--dbpassword=$(dbpassword) \
-		--dbport=$(dbport) \
-		--stationname=Bubental \
-		--sensorname=powermeter \
-		--meterhostname=test \
-		--meterport=1471 \
-		--meterid=1 \
+		--config=powermeter.config \
+		--simulate \
 		--debug
 

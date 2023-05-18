@@ -8,9 +8,7 @@
 #ifndef _debug_h
 #define _debug_h
 
-/*
-#include "includes.h"
-*/
+#include <syslog.h>
 
 #ifdef __cplusplus
 extern "C" {

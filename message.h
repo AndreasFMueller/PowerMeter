@@ -16,11 +16,11 @@
 namespace powermeter {
 
 class message : public std::map<std::string, float> {
-	std::chrono::steady_clock::time_point	_when;
+	std::chrono::system_clock::time_point	_when;
 public:
-	message(const std::chrono::steady_clock::time_point& when);
-	const std::chrono::steady_clock::time_point&	when() const;
-	void	when(const std::chrono::steady_clock::time_point& w);
+	message(const std::chrono::system_clock::time_point& when);
+	const std::chrono::system_clock::time_point&	when() const;
+	void	when(const std::chrono::system_clock::time_point& w);
 	bool	has(const std::string& name);
 	void	accumulate(const std::chrono::duration<float>& duration,
 			const std::string& name,
@@ -32,12 +32,12 @@ class messagequeue : public std::deque<message> {
 	bool			_active;
 	std::mutex		_mutex;
 	std::condition_variable	_signal;
-	std::chrono::steady_clock::time_point	_last_submit;
-	std::chrono::steady_clock::time_point	_last_extract;
+	std::chrono::system_clock::time_point	_last_submit;
+	std::chrono::system_clock::time_point	_last_extract;
 public:
 	typedef enum { timeout, terminated } status;
-	const std::chrono::steady_clock::time_point&	last_submit() const;
-	const std::chrono::steady_clock::time_point&	last_extract() const;
+	const std::chrono::system_clock::time_point&	last_submit() const;
+	const std::chrono::system_clock::time_point&	last_extract() const;
 	messagequeue();
 	~messagequeue();
 	void	submit(const message& m);

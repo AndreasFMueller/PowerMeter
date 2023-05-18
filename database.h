@@ -12,6 +12,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <configuration.h>
 
 namespace powermeter {
 
@@ -46,10 +47,7 @@ private:
 	std::mutex		_mutex;
 	std::condition_variable	_signal;
 public:
-	database(const std::string& hostname, const std::string& dbname,
-		const std::string& dbuser, const std::string& dbpassword,
-		int dbport,
-		const std::string& stationname, const std::string& sensorname,
+	database(const configuration& config,
 		messagequeue& queue);
 	~database();
 	void	store(const message& m);

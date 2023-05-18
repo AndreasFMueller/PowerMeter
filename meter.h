@@ -12,6 +12,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <configuration.h>
 
 namespace powermeter {
 
@@ -32,11 +33,12 @@ class meter {
 	std::condition_variable	_signal;
 	message	integrate();
 public:
-	meter(const std::string& hostname, unsigned short port,
-		int deviceid, messagequeue& queue);
+	meter(const configuration& config, messagequeue& queue);
+	meter(const meter& other) = delete;
 	~meter();
 	static void	launch(meter* m);
 	void	run();
+	static bool	simulate;
 };
 
 } // namespace powermeter
