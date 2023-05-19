@@ -7,6 +7,7 @@
 #include <mysql.h>
 #include <format.h>
 #include <debug.h>
+#include <cstring>
 
 namespace powermeter {
 

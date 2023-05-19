@@ -16,6 +16,8 @@
 #include <configuration.h>
 #include <iostream>
 #include <config.h>
+#include <unistd.h>
+#include <atomic>
 
 namespace powermeter {
 

@@ -1,5 +1,12 @@
 CFLAGS="-g -Wall -O"
 CXXFLAGS="-g -Wall -O --std=c++11"
-export CFLAGS CXXFLAGS
-./configure
+export CFLAGS CXXFLAGS 
+case `uname` in
+	Linux)	LIBS=-lpthread
+		export LIBS
+		;;
+	Darwin)
+		;;
+esac
+./configure --prefix=/usr/local
 

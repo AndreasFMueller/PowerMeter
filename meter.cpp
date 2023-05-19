@@ -9,6 +9,7 @@
 #include <format.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <cstring>
 
 namespace powermeter {
 

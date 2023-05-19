@@ -13,6 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <configuration.h>
+#include <atomic>
 
 namespace powermeter {
 

@@ -7,6 +7,7 @@
 #include <debug.h>
 #include <format.h>
 #include <fstream>
+#include <cstring>
 
 namespace powermeter {
 
