@@ -62,8 +62,9 @@ float	phase2::period = 2000;
 
 float	phase2::squarewave(const std::chrono::system_clock::time_point& _t) const {
 	float	s = t(_t);
-	s = s - trunc(s / period);
-	return (s > period/2) ? 1 : -1;
+	s -= period * floor(s / period);
+	float	l = period/2;
+	return (s > l) ? 1 : -1;
 }
 
 phase2::phase2() {
@@ -82,7 +83,7 @@ float	phase2::qrms(const std::chrono::system_clock::time_point& _t) {
 }
 
 float	phase2::cosphi(const std::chrono::system_clock::time_point& _t) {
-	return cos(1 + squarewave(_t));
+	return cos(1 + 0.3 * squarewave(_t));
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -93,9 +94,9 @@ float	phase3::period = 4711;
 
 float	phase3::trianglewave(const std::chrono::system_clock::time_point& _t) const {
 	float	s = t(_t);
-	s = s - trunc(s / period);
-	float	x = (s - period/2) / (period/2);
-	float	result = 1 - 2 * fabs(x);
+	s -= period * floor(s / period);
+	float	l = period/2.;
+	float	result = 1 - 2 * fabs((s-l)/l);
 	return result;
 }
 
