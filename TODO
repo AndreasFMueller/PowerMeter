@@ -1,3 +1,8 @@
 - add Power, Voltage, Current classes to meteo (to enable averaging)
 
 - add Energy and integration method
+
+- add manual page
+
+- add configuration for powermeter database
+
