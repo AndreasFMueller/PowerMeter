@@ -47,7 +47,7 @@ float	phase1::irms(const std::chrono::system_clock::time_point& _t) {
 }
 
 float	phase1::qrms(const std::chrono::system_clock::time_point& _t) {
-	return 0.02;
+	return 0.1;
 }
 
 float	phase1::cosphi(const std::chrono::system_clock::time_point& _t) {
@@ -79,7 +79,7 @@ float	phase2::irms(const std::chrono::system_clock::time_point& _t) {
 }
 
 float	phase2::qrms(const std::chrono::system_clock::time_point& _t) {
-	return 0.05 + 0.3 * (1 + squarewave(_t));
+	return 0.05 + 0.03 * (1 + squarewave(_t));
 }
 
 float	phase2::cosphi(const std::chrono::system_clock::time_point& _t) {
