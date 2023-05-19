@@ -23,6 +23,8 @@ configuration::configuration() {
 		std::string("1471")));
 	insert(std::make_pair(std::string("meterid"),
 		std::string("1")));
+	insert(std::make_pair(std::string("meterinterval"),
+		std::string("5")));
 }
 
 static std::string	ltrim(const std::string& s) {
@@ -89,6 +91,17 @@ int	configuration::intvalue(const std::string& name) const {
 	return std::stoi(i->second);
 }
 
+float	configuration::floatvalue(const std::string& name) const {
+	auto	i = find(name);
+	if (i == end()) {
+		std::string	msg = stringprintf("cannot find: %s",
+					name.c_str());
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+	return std::stod(i->second);
+}
+
 const std::string&	configuration::stringvalue(const std::string& name,
 				const std::string& defaultvalue) const {
 	auto	i = find(name);
@@ -106,11 +119,23 @@ int	configuration::intvalue(const std::string& name, int defaultvalue) const {
 	return std::stoi(i->second);
 }
 
+float	configuration::floatvalue(const std::string& name, float defaultvalue) const {
+	auto	i = find(name);
+	if (i == end()) {
+		return defaultvalue;
+	}
+	return std::stod(i->second);
+}
+
 void	configuration::set(const std::string& name, const std::string& value) {
 	insert(std::make_pair(name, value));
 }
 
 void	configuration::set(const std::string& name, int value) {
+	insert(std::make_pair(name, std::to_string(value)));
+}
+
+void	configuration::set(const std::string& name, float value) {
 	insert(std::make_pair(name, std::to_string(value)));
 }
 

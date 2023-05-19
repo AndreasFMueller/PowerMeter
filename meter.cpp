@@ -49,7 +49,9 @@ meter::meter(const configuration& config, messagequeue& queue)
 	: _hostname(config.stringvalue("meterhostname")),
 	  _port(config.intvalue("meterport")),
 	  _deviceid(config.intvalue("meterid")),
-	  _queue(queue) {
+	  _queue(queue),
+	  _interval(std::chrono::duration<float>(
+		config.floatvalue("meterinterval"))) {
 
 	// set up the connection
 	_mb = NULL;
@@ -204,8 +206,8 @@ message	meter::integrate() {
 		std::chrono::duration<float>	remaining = end - now;
 
 		// compute the largest possible interval we can wait
-		if (remaining > std::chrono::seconds(2)) {
-			remaining = std::chrono::seconds(2);
+		if (remaining > _interval) {
+			remaining = _interval;
 		}
 
 		// wait for the remaining time

@@ -27,6 +27,7 @@ class meter {
 	messagequeue&		_queue;
 	// the connection
 	modbus_t		*_mb;
+	std::chrono::duration<float>	_interval;
 	// managing the thread
 	std::atomic<bool>	_active;
 	std::thread		_thread;
