@@ -27,13 +27,18 @@ database::database(const configuration& config,
 		_dbport, NULL, 0)) {
 		mysql_close(_mysql);
 		_mysql = NULL;
-		throw std::runtime_error("cannot open database connection");
+		std::string	msg("cannot open database connection");
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
 	}
 
 	// prepare a statement
 	MYSQL_STMT	*stmt = mysql_stmt_init(_mysql);
 	if (NULL == stmt) {
-		throw std::runtime_error("cannot create stmt");
+		std::string	msg = stringprintf("cannot create stmt: %s",
+			mysql_error(_mysql));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
 	}
 
 	// prepare the query
@@ -46,7 +51,8 @@ database::database(const configuration& config,
 	int	rc = mysql_stmt_prepare(stmt, query.c_str(), query.size());
 	if (0 != rc) {
 		std::string	msg = stringprintf("cannot prepare query '%s': "
-			"%s", query.c_str(), mysql_error(_mysql));
+			"%s", query.c_str(), mysql_stmt_error(stmt));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
 		throw std::runtime_error(msg);
 	}
@@ -79,8 +85,11 @@ database::database(const configuration& config,
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "binding parameters");
 	rc = mysql_stmt_bind_param(stmt, parameters);
 	if (0 != rc) {
+		std::string	msg = stringprintf("cannot bind: %s",
+			mysql_stmt_error(stmt));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
-		throw std::runtime_error("cannot bind");
+		throw std::runtime_error(msg);
 	}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "bind complete");
 
@@ -88,7 +97,8 @@ database::database(const configuration& config,
 	rc = mysql_stmt_execute(stmt);
 	if (0 != rc) {
 		std::string	msg = stringprintf("cannot execute: %s",
-			mysql_error(_mysql));
+			mysql_stmt_error(stmt));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
 		throw std::runtime_error(msg);
 	}
@@ -109,15 +119,21 @@ database::database(const configuration& config,
 	results[1].buffer_type = MYSQL_TYPE_TINY;
 	rc = mysql_stmt_bind_result(stmt, results);
 	if (0 != rc) {
+		std::string	msg = stringprintf("cannot bind result: %s",
+			mysql_stmt_error(stmt));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
-		throw std::runtime_error("cannot bind result parameters");
+		throw std::runtime_error(msg);
 	}
 
 	// retrieve the data
 	rc = mysql_stmt_fetch(stmt);
 	if (0 != rc) {
+		std::string	msg = stringprintf("cannot retrieve ids: %s",
+			mysql_stmt_error(stmt));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
-		throw std::runtime_error("cannot retrieve ids");
+		throw std::runtime_error(msg);
 	}
 
 	// cleanup
@@ -127,7 +143,10 @@ database::database(const configuration& config,
 	query = std::string("select name, id from mfield");
 	mysql_store_result(_mysql);
 	if (mysql_query(_mysql, query.c_str())) {
-		throw std::runtime_error("cannot retrieve field information");
+		std::string	msg = stringprintf("cannot retrieve field "
+			"information: %s", mysql_error(_mysql));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
 	}
 	MYSQL_RES	*mres = mysql_store_result(_mysql);
 	MYSQL_ROW	row;
@@ -159,7 +178,8 @@ void	database::launch(database *d) {
 		d->run();
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "database thread terminates");
 	} catch (const std::exception& x) {
-		debug(LOG_ERR, DEBUG_LOG, 0, "database thread fails with exception %s", x.what());
+		debug(LOG_ERR, DEBUG_LOG, 0, "database thread fails with "
+			"exception %s", x.what());
 	} catch (...) {
 		debug(LOG_ERR, DEBUG_LOG, 0, "database thread fails");
 	}
@@ -177,8 +197,11 @@ void	database::store(const message& m) {
 		"values (?, ?, ?, ?)");
 	int	rc = mysql_stmt_prepare(stmt, query.c_str(), query.size());
 	if (0 != rc) {
+		std::string	msg = stringprintf("cannot prepare statement "
+			"'%s': %s", query.c_str(), mysql_error(_mysql));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
-		throw std::runtime_error("cannot prepare the statement");
+		throw std::runtime_error(msg);
 	}
 
 	// bind the parameters
@@ -198,20 +221,26 @@ void	database::store(const message& m) {
 	parameters[3].buffer_type = MYSQL_TYPE_FLOAT;
 	rc = mysql_stmt_bind_param(stmt, parameters);
 	if (0 != rc) {
-		throw std::runtime_error("cannot bind parameters");
+		std::string	msg = stringprintf("cannot bind: %s",
+			mysql_stmt_error(stmt));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
 	}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "parameters bound");
 
 	// go through the message
 	for (auto i = m.begin(); i != m.end(); i++) {
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "store value for %s",
-			i->first.c_str());
+		//debug(LOG_DEBUG, DEBUG_LOG, 0, "store value for %s",
+		//	i->first.c_str());
 		fid = fieldid(i->first);
 		value = i->second;
 		rc = mysql_stmt_execute(stmt);
 		if (0 != rc) {
+			std::string	msg = stringprintf("execute failed: %s",
+				mysql_stmt_error(stmt));
+			debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 			mysql_stmt_close(stmt);
-			throw std::runtime_error("execute failed");
+			throw std::runtime_error(msg);
 		}
 	}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "all values stored");

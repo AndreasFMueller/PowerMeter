@@ -13,7 +13,8 @@ libpowermeter_la_SOURCES =						\
 	debug.c								\
 	format.cpp							\
 	message.cpp							\
-	meter.cpp
+	meter.cpp							\
+	simulator.cpp
 
 noinst_HEADERS =							\
 	configuration.h							\
@@ -21,7 +22,8 @@ noinst_HEADERS =							\
 	debug.h								\
 	format.h							\
 	message.h							\
-	meter.h
+	meter.h								\
+	simulator.h
 
 bin_PROGRAMS = powermeterd
 

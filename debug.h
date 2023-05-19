@@ -9,6 +9,7 @@
 #define _debug_h
 
 #include <syslog.h>
+#include <stdarg.h>
 
 #ifdef __cplusplus
 extern "C" {

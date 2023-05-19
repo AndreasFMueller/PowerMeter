@@ -13,6 +13,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <configuration.h>
+#include <simulator.h>
 
 namespace powermeter {
 
@@ -39,6 +40,9 @@ public:
 	static void	launch(meter* m);
 	void	run();
 	static bool	simulate;
+private:
+	simulator	sim;
+	void	read(unsigned short *registers);
 };
 
 } // namespace powermeter

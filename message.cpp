@@ -29,7 +29,7 @@ bool	message::has(const std::string& name) {
 
 void	message::accumulate(const std::chrono::duration<float>& duration,
 		const std::string& name, const float value) {
-	//debug(LOG_DEBUG, DEBUG_LOG, 0, "integrate %s -> %.3f", name.c_str(),
+	//debug(LOG_DEBUG, DEBUG_LOG, 0, "accumulate %s -> %.3f", name.c_str(),
 	//	value);
 	//std::chrono::duration<float>	d = duration;
 	float	ivalue = value * duration.count();

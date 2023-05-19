@@ -212,29 +212,21 @@ message	meter::integrate() {
 			remaining.count());
 		switch (_signal.wait_for(lock, remaining)) {
 		case std::cv_status::timeout:
-			debug(LOG_DEBUG, DEBUG_LOG, 0, "timeout");
+			//debug(LOG_DEBUG, DEBUG_LOG, 0, "timeout");
 			break;
 		case std::cv_status::no_timeout:
 			// this means we were signaled to interrup
-			debug(LOG_DEBUG, DEBUG_LOG, 0, "wait interrupted");
-			throw std::runtime_error("interrupted");
-			break;
+			//debug(LOG_DEBUG, DEBUG_LOG, 0, "wait interrupted");
+			std::string	msg("meter thread interrupted");
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "%s", msg.c_str());
+			throw std::runtime_error(msg);
 		}
 		
 		uint16_t	registers[53];
 		// read a message
 		if (simulate) {
 			debug(LOG_DEBUG, DEBUG_LOG, 0, "read simulated data");
-			int	fd = open("/dev/random", O_RDONLY);
-			int	rc = read(fd, registers, sizeof(registers));
-			if (rc < 0) {
-				std::string	msg = stringprintf("read "
-					"failed: %s", strerror(errno));
-				close(fd);
-				debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
-				throw std::runtime_error(msg);
-			}
-			close(fd);
+			read(registers);
 		} else {
 			debug(LOG_DEBUG, DEBUG_LOG, 0, "read data from modbus");
 			int	rc = modbus_read_registers(_mb, 0, 53,
@@ -250,7 +242,7 @@ message	meter::integrate() {
 
 		// end time for the integration
 		std::chrono::duration<float>	delta(std::chrono::system_clock::now() - previous);
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "delta: %.3f", delta.count());
+		//debug(LOG_DEBUG, DEBUG_LOG, 0, "delta: %.3f", delta.count());
 		previous = std::chrono::system_clock::now();
 		
 		// accumulate the data
@@ -259,7 +251,7 @@ message	meter::integrate() {
 		result.accumulate(delta, "irms_phase1",
 			0.1 * registers[ALE3_IRMS_PHASE1]);
 		result.accumulate(delta, "prms_phase1",
-			0.01 * registers[ALE3_PRMS_PHASE1]);
+			10 * registers[ALE3_PRMS_PHASE1]);
 		result.accumulate(delta, "qrms_phase1",
 			0.01 * registers[ALE3_QRMS_PHASE1]);
 		result.accumulate(delta, "cosphi_phase1",
@@ -270,7 +262,7 @@ message	meter::integrate() {
 		result.accumulate(delta, "irms_phase2",
 			0.1 * registers[ALE3_IRMS_PHASE2]);
 		result.accumulate(delta, "prms_phase2",
-			0.01 * registers[ALE3_PRMS_PHASE2]);
+			10 * registers[ALE3_PRMS_PHASE2]);
 		result.accumulate(delta, "qrms_phase2",
 			0.01 * registers[ALE3_QRMS_PHASE2]);
 		result.accumulate(delta, "cosphi_phase2",
@@ -281,14 +273,14 @@ message	meter::integrate() {
 		result.accumulate(delta, "irms_phase3",
 			0.1 * registers[ALE3_IRMS_PHASE3]);
 		result.accumulate(delta, "prms_phase3",
-			0.01 * registers[ALE3_PRMS_PHASE3]);
+			10 * registers[ALE3_PRMS_PHASE3]);
 		result.accumulate(delta, "qrms_phase3",
 			0.01 * registers[ALE3_QRMS_PHASE3]);
 		result.accumulate(delta, "cosphi_phase3",
 			0.01 * registers[ALE3_COSPHI_PHASE3]);
 
 		result.accumulate(delta, "prms_total",
-			0.01 * registers[ALE3_PRMS_TOTAL]);
+			10 * registers[ALE3_PRMS_TOTAL]);
 		result.accumulate(delta, "qrms_total",
 			0.01 * registers[ALE3_QRMS_TOTAL]);
 
@@ -304,22 +296,24 @@ message	meter::integrate() {
 	float	factor = 1. / d;
 	result.finalize("urms_phase1", factor);
 	result.finalize("irms_phase1", factor);
+	result.finalize("prms_phase1", factor);
 	result.finalize("qrms_phase1", factor);
 	result.finalize("cosphi_phase1", factor);
+
 	result.finalize("urms_phase2", factor);
 	result.finalize("irms_phase2", factor);
+	result.finalize("prms_phase2", factor);
 	result.finalize("qrms_phase2", factor);
 	result.finalize("cosphi_phase2", factor);
+
 	result.finalize("urms_phase3", factor);
+	result.finalize("prms_phase3", factor);
 	result.finalize("irms_phase3", factor);
 	result.finalize("qrms_phase3", factor);
 	result.finalize("cosphi_phase3", factor);
-	result.finalize("qrms_total", factor);
 
-	// some entries just need extrapolating
-	factor = 60. / d;
-	result.finalize("prms_phase1", factor);
 	result.finalize("prms_total", factor);
+	result.finalize("qrms_total", factor);
 
 	// return the message
 	return result;
@@ -339,6 +333,63 @@ void	meter::run() {
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "submit message");
 		_queue.submit(m);
 	}
+}
+
+/**
+ * \brief Read data from simulator
+ */
+void	meter::read(unsigned short *registers) {
+	memset(registers, 0, 53 * sizeof(short));
+	registers[ALE3_FIRMWARE_VERSION] = 11;
+	registers[ALE3_NUMBER_OF_REGISTERS] = 52;
+	registers[ALE3_NUMBER_OF_FLAGS] = 0;
+	registers[ALE3_BAUDRATE_HIGH] = 1;
+	registers[ALE3_BAUDRATE_LOW] = 49664;
+	registers[ALE3_ASN1] = 0x414c; // AL
+	registers[ALE3_ASN2] = 0x4533; // E3
+	registers[ALE3_ASN3] = 0x4435; // D5
+	registers[ALE3_ASN4] = 0x4644; // FD
+	registers[ALE3_ASN5] = 0x3130; // 10
+	registers[ALE3_ASN6] = 0x4332; // C2
+	registers[ALE3_ASN7] = 0x4130; // A0
+	registers[ALE3_ASN8] = 0x3000; // 0
+	registers[ALE3_HW_VERSION] = 11;
+	registers[ALE3_SERIAL_LOW] = 0;
+	registers[ALE3_SERIAL_HIGH] = 0;
+	registers[ALE3_STATUS] = 0;
+	registers[ALE3_RESPONSE_TIMEOUT] = 0;
+	registers[ALE3_MODBUS_ADDRESS] = 47;
+	registers[ALE3_ERROR] = 0;
+	registers[ALE3_TARIFF] = 4;
+	registers[ALE3_TOTAL_TARIFF1_HIGH] = 13;
+	registers[ALE3_TOTAL_TARIFF1_LOW] = 60383;
+	registers[ALE3_PARTIAL_TARIFF1_HIGH] = 13;
+	registers[ALE3_PARTIAL_TARIFF1_LOW] = 60383;
+	registers[ALE3_TOTAL_TARIFF2_HIGH] = 13;
+	registers[ALE3_TOTAL_TARIFF2_LOW] = 60383;
+	registers[ALE3_PARTIAL_TARIFF2_HIGH] = 13;
+	registers[ALE3_PARTIAL_TARIFF2_LOW] = 60383;
+
+	registers[ALE3_URMS_PHASE1] = sim.urms_phase1();
+	registers[ALE3_IRMS_PHASE1] = sim.irms_phase1();
+	registers[ALE3_PRMS_PHASE1] = sim.prms_phase1();
+	registers[ALE3_QRMS_PHASE1] = sim.qrms_phase1();
+	registers[ALE3_COSPHI_PHASE1] = sim.cosphi_phase1();
+
+	registers[ALE3_URMS_PHASE2] = sim.urms_phase2();
+	registers[ALE3_IRMS_PHASE2] = sim.irms_phase2();
+	registers[ALE3_PRMS_PHASE2] = sim.prms_phase2();
+	registers[ALE3_QRMS_PHASE2] = sim.qrms_phase2();
+	registers[ALE3_COSPHI_PHASE2] = sim.cosphi_phase2();
+
+	registers[ALE3_URMS_PHASE3] = sim.urms_phase3();
+	registers[ALE3_IRMS_PHASE3] = sim.irms_phase3();
+	registers[ALE3_PRMS_PHASE3] = sim.prms_phase3();
+	registers[ALE3_QRMS_PHASE3] = sim.qrms_phase3();
+	registers[ALE3_COSPHI_PHASE3] = sim.cosphi_phase3();
+
+	registers[ALE3_PRMS_TOTAL] = sim.prms_total();
+	registers[ALE3_QRMS_TOTAL] = sim.qrms_total();
 }
 
 } // namespace powermeter
