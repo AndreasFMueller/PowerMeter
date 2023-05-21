@@ -1,0 +1,67 @@
+Paket interpretation from: https://github.com/lvzon/soliviamonitor
+
+Request packet:
+
+02 05: STX ENQ
+01   : ID
+02   : len
+60 01: cmd
+85 fc: crc
+03   : ETX
+
+Response packet:
+
+02 06: STX ACK
+01   : ID 1
+9d   : length 157
+60 01: cmd
+45 4f 45 34 37 30 33 30 34 35 37: part number  EOE47030457 = Solivia 10 TL
+32 33 30 34 35 37 30 30:          23045700
+31 33 31 31 30 30 30 30 31 32:    Serial 1311000012
+31 33 31 31 30 30                 131100
+01 46: firmware revision power managment 1.70
+0d 08
+01 32: firmware revision sts 1.50
+0d 08
+01 3f: firmware reision display 1.63
+0d 05
+10 35: inverter voltage L1-L2:           414.9  V
+01 27: inverter current L1                 2.95 A
+02 3e: inverter power L1                 574    W
+13 8e: inverter frequency L1              50.06 Hz
+10 2c: net voltage L1-L2                 414.0  V
+13 8d: net frequency L1                   50.05 Hz
+
+10 2f: inverter volgate L2-L3            414.3  V
+01 2b: inverter current L2                 2.99 A
+02 53: inverter power L2                 595    W
+13 8e: inverter frequency L2              50.06 Hz
+10 28: net voltage L2-L3                 413.6  V
+13 8d: net frequency L2                   50.05 Hz
+
+10 26: inverter voltage L3-L1            413.4  V
+01 2e: inverter current L3                 3.02 A
+02 42: inverter power L3                 578    W
+13 8e: inverter frequency L3              50.06 Hz
+10 17: net voltage L3-L1                 411.9  V
+13 8d: net frequency L3                   50.05 Hz
+
+0f 6a: voltage string 1                  394.6  V
+00 d9: current string 1                    2.17 A
+03 5a: power string 1                    858    W
+10 be: voltage string 2                  428.6  V
+00 e2: current string 2                    2.26 A
+03 cc: power string 2                    972    W
+06 d3: total output power               1747    W
+0c aa:
+0c a4:
+00 00 0f a0: current day energy         4000 Wh
+00 00 44 99: feed-in time current day  17561 s
+00 00 dd ab: lifetime output           56747 kWh
+08 0a 08 d2:
+00 2b: heat sink temperature    43
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+00 00 00 00
+61 ad: crc
+03
