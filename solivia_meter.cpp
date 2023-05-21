@@ -120,6 +120,7 @@ message	solivia_meter::integrate() {
 
 	// iterate until the end
 	std::chrono::system_clock::time_point   now;
+	int	counter = 0;
 	while ((now = std::chrono::system_clock::now()) < end) {
 		// compute the remaining time
 		std::chrono::duration<float>    remaining = end - now;
@@ -164,8 +165,8 @@ message	solivia_meter::integrate() {
 			throw std::runtime_error(msg);
 		}
 		if (rc != packetsize) {
-			debug(LOG_DEBUG, DEBUG_LOG, 0, "wrong packet size: %d",
-				rc);
+			//debug(LOG_DEBUG, DEBUG_LOG, 0,
+			//	"wrong packet size (%d), skipping", rc);
 			continue;
 		}
 
@@ -181,6 +182,7 @@ message	solivia_meter::integrate() {
 		previous = std::chrono::system_clock::now();
 
 		//debug(LOG_DEBUG, DEBUG_LOG, 0, "processing a packet");
+		counter++;
 
 		// accumulate the data
 		result.accumulate(delta, "phase1.voltage", phase1_voltage());
@@ -244,7 +246,8 @@ message	solivia_meter::integrate() {
 	result.finalize("inverter.power", factor);
 	result.finalize("inverter.temperature", factor);
 
-	debug(LOG_DEBUG, DEBUG_LOG, 0, "message finalized");
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "message finalized with %d packets",
+		counter);
 
 	// return the message
 	return result;
