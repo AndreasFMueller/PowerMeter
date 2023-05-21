@@ -11,13 +11,13 @@
 
 namespace powermeter {
 
-meter	*meterfactory::get(const std::string& metertypename,
+std::shared_ptr<meter>	meterfactory::get(const std::string& metertypename,
 		messagequeue& queue) {
 	if (metertypename == "solivia") {
-		return new solivia_meter(_config, queue);
+		return std::shared_ptr<meter>(new solivia_meter(_config, queue));
 	}
 	if (metertypename == "modbus") {
-		return new modbus_meter(_config, queue);
+		return std::shared_ptr<meter>(new modbus_meter(_config, queue));
 	}
 	std::string	msg = stringprintf("unknown meter type: %s",
 		metertypename.c_str());

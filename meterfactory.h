@@ -15,7 +15,8 @@ class meterfactory {
 	const configuration&	_config;
 public:
 	meterfactory(const configuration& config) : _config(config) { }
-	meter	*get(const std::string& metertypename, messagequeue& queue);
+	std::shared_ptr<meter>	get(const std::string& metertypename,
+					messagequeue& queue);
 };
 
 } // namespace powermeter

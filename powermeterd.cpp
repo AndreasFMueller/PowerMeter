@@ -168,8 +168,8 @@ int	main(int argc, char *argv[]) {
 	// create the source, i.e. the thread reading from the power meter
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "start the meter");
 	meterfactory	factory(config);
-	meter	*mtr = factory.get(config.stringvalue("metertype"), queue);
-	std::shared_ptr<meter>	meterp(mtr);
+	std::shared_ptr<meter>	meterp
+		= factory.get(config.stringvalue("metertype"), queue);
 
 	sleep(10);
 
