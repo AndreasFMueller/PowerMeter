@@ -123,8 +123,8 @@ message	solivia_meter::integrate() {
 	while ((now = std::chrono::system_clock::now()) < end) {
 		// compute the remaining time
 		std::chrono::duration<float>    remaining = end - now;
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "remaining: %.3f",
-			remaining.count());
+		//debug(LOG_DEBUG, DEBUG_LOG, 0, "remaining: %.3f",
+		//	remaining.count());
 
 		// compute the largest possible interval we can wait
 		if (remaining > _interval) {
@@ -155,7 +155,7 @@ message	solivia_meter::integrate() {
 		}
 
 		// read the packet
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "reading a packet");
+		//debug(LOG_DEBUG, DEBUG_LOG, 0, "reading a packet");
 		rc = read(_fd, _packet, packetsize);
 		if (rc < 0) {
 			std::string	 msg = stringprintf("cannot read: %s",
@@ -180,7 +180,7 @@ message	solivia_meter::integrate() {
 		//debug(LOG_DEBUG, DEBUG_LOG, 0, "delta: %.3f", delta.count());
 		previous = std::chrono::system_clock::now();
 
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "processing a packet");
+		//debug(LOG_DEBUG, DEBUG_LOG, 0, "processing a packet");
 
 		// accumulate the data
 		result.accumulate(delta, "phase1.voltage", phase1_voltage());
