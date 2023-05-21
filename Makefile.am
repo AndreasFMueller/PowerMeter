@@ -40,6 +40,5 @@ dbport = 3307
 test:	powermeterd powermeter.config
 	./powermeterd --foreground \
 		--config=powermeter.config \
-		--simulate \
 		--debug
 

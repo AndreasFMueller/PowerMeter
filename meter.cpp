@@ -69,16 +69,31 @@ meter::meter(const configuration& config, messagequeue& queue)
 			debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 			throw std::runtime_error(msg);
 		}
+		if (0 != modbus_set_response_timeout(_mb, 0, 2000)) {
+			std::string	msg = stringprintf("cannot set timeout:"
+				" %s", modbus_strerror(errno));
+			debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+			modbus_close(_mb);
+			modbus_free(_mb);
+			_mb = NULL;
+			throw std::runtime_error(msg);
+		}
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "connecting");
 		if (-1 == modbus_connect(_mb)) {
 			std::string	msg = stringprintf("cannot connect: %s",
 				modbus_strerror(errno));
 			debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+			modbus_close(_mb);
+			modbus_free(_mb);
+			_mb = NULL;
 			throw std::runtime_error(msg);
 		}
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "set slave to %d", _deviceid);
 		if (-1 == modbus_set_slave(_mb, _deviceid)) {
 			debug(LOG_ERR, DEBUG_LOG, 0, "cannot set slave id");
+			modbus_close(_mb);
+			modbus_free(_mb);
+			_mb = NULL;
 			throw std::runtime_error("cannot set device id");
 		}
 	}
@@ -232,14 +247,24 @@ message	meter::integrate() {
 			read(registers);
 		} else {
 			debug(LOG_DEBUG, DEBUG_LOG, 0, "read data from modbus");
-			int	rc = modbus_read_registers(_mb, 0, 53,
-					registers);
-			if (rc == -1) {
-				std::string	msg = stringprintf("cannot read"
-					" registers: %s",
-					modbus_strerror(errno));
-				debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
-				throw std::runtime_error(msg);
+			int	step = 10;
+			int	maxreg = 52;
+			for (int reg = 0; reg < maxreg; reg += step) {
+				int	rc;
+				int	n = std::min(step, maxreg - reg);
+				debug(LOG_DEBUG, DEBUG_LOG, 0,
+					"reading %d regs starting from %d",
+					n, reg);
+				rc = modbus_read_registers(_mb, reg, n,
+					registers + reg);
+				if (rc == -1) {
+					std::string	msg = stringprintf(
+						"cannot read registers: %s",
+						modbus_strerror(errno));
+					debug(LOG_ERR, DEBUG_LOG, 0, "%s",
+						msg.c_str());
+					throw std::runtime_error(msg);
+				}
 			}
 		}
 

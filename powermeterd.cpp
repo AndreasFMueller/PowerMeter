@@ -133,9 +133,12 @@ int	main(int argc, char *argv[]) {
 			usage(argv[0]);
 			return EXIT_SUCCESS;
 		}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "command line read");
 
 	// if not running in the foreground, daemonize now
-	if (!foreground) {
+	if (foreground) {
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "stay in foreground");
+	} else {
 		pid_t	pid = fork();
 		if (pid < 0) {
 			// XXX cannot fork
@@ -147,7 +150,7 @@ int	main(int argc, char *argv[]) {
 		setsid();
 		chdir("/");
 		umask(0);
-	}
+	} 
 
 	// create the queue
 	messagequeue	queue;
