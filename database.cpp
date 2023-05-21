@@ -19,7 +19,6 @@ database::database(const configuration& config,
 	  _dbpassword(config.stringvalue("dbpassword")),
 	  _dbport(config.intvalue("dbport")),
 	  _stationname(config.stringvalue("stationname")),
-	  _sensorname(config.stringvalue("sensorname")),
 	  _queue(queue) {
 	// create database connection
 	_mysql = mysql_init(NULL);
@@ -43,12 +42,12 @@ database::database(const configuration& config,
 	}
 
 	// prepare the query
-	std::string	query(	"select st.id, se.id "
+	std::string	query(	"select st.id, se.name, se.id "
 				"from station st, sensor se "
 				"where se.stationid = st.id "
 				"  and st.name = ?"
-				"  and se.name = ?"
 				" ");
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "query: '%s'", query.c_str());
 	int	rc = mysql_stmt_prepare(stmt, query.c_str(), query.size());
 	if (0 != rc) {
 		std::string	msg = stringprintf("cannot prepare query '%s': "
@@ -59,7 +58,7 @@ database::database(const configuration& config,
 	}
 
 	// create bind structure
-	MYSQL_BIND	parameters[2];
+	MYSQL_BIND	parameters[1];
 	memset(parameters, 0, sizeof(parameters));
 
 	char	stationbuffer[_stationname.size() + 1];
@@ -72,17 +71,7 @@ database::database(const configuration& config,
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "station name: '%s'",
 		parameters[0].buffer);
 
-	char	sensorbuffer[_sensorname.size() + 1];
-	strcpy(sensorbuffer, _sensorname.c_str());
-	unsigned long	sensorlength = _sensorname.size();
-	parameters[1].buffer = sensorbuffer;
-	parameters[1].buffer_length = sensorlength + 1;
-	parameters[1].length = &sensorlength;
-	parameters[1].buffer_type = MYSQL_TYPE_VAR_STRING;
-	debug(LOG_DEBUG, DEBUG_LOG, 0, "sensor name: '%s'",
-		parameters[1].buffer);
-
-	// bind the parameters
+	// bind the parameter
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "binding parameters");
 	rc = mysql_stmt_bind_param(stmt, parameters);
 	if (0 != rc) {
@@ -103,21 +92,30 @@ database::database(const configuration& config,
 		mysql_stmt_close(stmt);
 		throw std::runtime_error(msg);
 	}
-	debug(LOG_DEBUG, DEBUG_LOG, 0, "station '%s' %d, sensor '%s' %d",
-		_stationname.c_str(), _stationid,
-		_sensorname.c_str(), _sensorid);
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "query executed");
 
 	// bind the result fields
-	MYSQL_BIND	results[2];
+	MYSQL_BIND	results[3];
 	memset(results, 0, sizeof(results));
+
+	// stationid
 	memset(&_stationid, 0, sizeof(_stationid));
 	results[0].buffer = &_stationid;
 	results[0].buffer_length = sizeof(_stationid);
 	results[0].buffer_type = MYSQL_TYPE_TINY;
-	memset(&_sensorid, 0, sizeof(_sensorid));
-	results[1].buffer = &_sensorid;
-	results[1].buffer_length = sizeof(_sensorid);
-	results[1].buffer_type = MYSQL_TYPE_TINY;
+
+	char	sensorname[32];
+	memset(sensorname, 0, sizeof(sensorname));
+	results[1].buffer = sensorname;
+	results[1].buffer_length = sizeof(sensorname);
+	results[1].buffer_type = MYSQL_TYPE_VAR_STRING;
+
+	char	sensorid;
+	memset(&sensorid, 0, sizeof(sensorid));
+	results[2].buffer = &sensorid;
+	results[2].buffer_length = sizeof(sensorid);
+	results[2].buffer_type = MYSQL_TYPE_TINY;
+
 	rc = mysql_stmt_bind_result(stmt, results);
 	if (0 != rc) {
 		std::string	msg = stringprintf("cannot bind result: %s",
@@ -126,16 +124,25 @@ database::database(const configuration& config,
 		mysql_stmt_close(stmt);
 		throw std::runtime_error(msg);
 	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "station '%s' has id %d",
+		_stationname.c_str(), _stationid);
 
-	// retrieve the data
-	rc = mysql_stmt_fetch(stmt);
-	if (0 != rc) {
+	// fetch as many rows as there are
+	while (0 == (rc = mysql_stmt_fetch(stmt))) {
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "got another row");
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "adding sensors '%s' -> %d",
+			sensorname, sensorid);
+		_sensors.insert(std::make_pair(std::string(sensorname),
+			sensorid));
+	}
+	if (rc == 1) {
 		std::string	msg = stringprintf("cannot retrieve ids: %s",
 			mysql_stmt_error(stmt));
 		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		mysql_stmt_close(stmt);
 		throw std::runtime_error(msg);
 	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "sensors and fields retrieved");
 
 	// cleanup
 	mysql_stmt_close(stmt);
@@ -212,7 +219,8 @@ void	database::store(const message& m) {
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "timekey = %ld", timekey);
 	parameters[0].buffer = &timekey;
 	parameters[0].buffer_type = MYSQL_TYPE_LONGLONG;
-	parameters[1].buffer = &_sensorid;
+	char	sid;
+	parameters[1].buffer = &sid;
 	parameters[1].buffer_type = MYSQL_TYPE_TINY;
 	char	fid;
 	parameters[2].buffer = &fid;
@@ -233,6 +241,7 @@ void	database::store(const message& m) {
 	for (auto i = m.begin(); i != m.end(); i++) {
 		//debug(LOG_DEBUG, DEBUG_LOG, 0, "store value for %s",
 		//	i->first.c_str());
+		sid = sensorid(i->first);
 		fid = fieldid(i->first);
 		value = i->second;
 		rc = mysql_stmt_execute(stmt);
@@ -261,8 +270,26 @@ void	database::run() {
 	}
 }
 
-char	database::fieldid(const std::string& fieldname) const {
-	auto	i = _fields.find(fieldname);
+char	database::sensorid(const std::string& sfname) const {
+	std::string	key = sfname;
+	size_t	l = sfname.find(".");
+	if (std::string::npos != l) {
+		key = sfname.substr(0, l);
+	}
+	auto	i = _sensors.find(key);
+	if (i == _fields.end()) {
+		throw std::runtime_error("field name not found");
+	}
+	return i->second;
+}
+
+char	database::fieldid(const std::string& sfname) const {
+	std::string	key = sfname;
+	size_t	l = sfname.find(".");
+	if (std::string::npos != l) {
+		key = sfname.substr(l+1);
+	}
+	auto	i = _fields.find(key);
 	if (i == _fields.end()) {
 		throw std::runtime_error("field name not found");
 	}

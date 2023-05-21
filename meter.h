@@ -20,30 +20,24 @@ namespace powermeter {
 class meter;
 
 class meter {
-	// configuration data
-	std::string		_hostname;
-	unsigned short		_port;
-	int			_deviceid;
+protected:
 	messagequeue&		_queue;
-	// the connection
-	modbus_t		*_mb;
 	std::chrono::duration<float>	_interval;
 	// managing the thread
 	std::atomic<bool>	_active;
 	std::thread		_thread;
 	std::mutex		_mutex;
 	std::condition_variable	_signal;
-	message	integrate();
+	virtual message	integrate() = 0;
+
+	void	stopthread();
 public:
 	meter(const configuration& config, messagequeue& queue);
 	meter(const meter& other) = delete;
-	~meter();
+	virtual ~meter();
+	void	startthread();
 	static void	launch(meter* m);
 	void	run();
-	static bool	simulate;
-private:
-	simulator	sim;
-	void	read(unsigned short *registers);
 };
 
 } // namespace powermeter

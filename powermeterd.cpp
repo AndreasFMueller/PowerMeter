@@ -9,7 +9,9 @@
 #include <stdexcept>
 #include <message.h>
 #include <database.h>
-#include <meter.h>
+#include <solivia_meter.h>
+#include <modbus_meter.h>
+#include <meterfactory.h>
 #include <debug.h>
 #include <sys/stat.h>
 #include <syslog.h>
@@ -30,6 +32,7 @@ static struct option	longopts[] = {
 { "dbpassword",		required_argument,	NULL,		'P' },
 { "dbport",		required_argument,	NULL,		'Q' },
 { "help",		no_argument,		NULL,		'?' },
+{ "metertype",		required_argument,	NULL,		't' },
 { "meterhostname",	required_argument,	NULL,		'm' },
 { "meterport",		required_argument,	NULL,		'p' },
 { "meterid",		required_argument,	NULL,		'i' },
@@ -63,7 +66,7 @@ int	main(int argc, char *argv[]) {
 	debuglevel = LOG_DEBUG;
 
 	// read parameters from the command line
-	while (EOF != (c = getopt_long(argc, argv, "c:dH:D:U:P:Q:S:s::m:p:i:Vx",
+	while (EOF != (c = getopt_long(argc, argv, "c:dH:D:U:P:Q:S:s::m:p:i:Vxt:",
 		longopts, NULL)))
 		switch (c) {
 		case 'c':
@@ -124,7 +127,7 @@ int	main(int argc, char *argv[]) {
 				"running in the foreground");
 			break;
 		case 'x':
-			meter::simulate = true;
+			modbus_meter::simulate = true;
 			break;
 		case 'V':
 			std::cout << "powermeter " << VERSION << std::endl;
@@ -132,6 +135,9 @@ int	main(int argc, char *argv[]) {
 		case '?':
 			usage(argv[0]);
 			return EXIT_SUCCESS;
+		case 't':
+			config.set("metertype", optarg);
+			break;
 		}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "command line read");
 
@@ -161,7 +167,9 @@ int	main(int argc, char *argv[]) {
 	
 	// create the source, i.e. the thread reading from the power meter
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "start the meter");
-	meter	mtr(config, queue);
+	meterfactory	factory(config);
+	meter	*mtr = factory.get(config.stringvalue("metertype"), queue);
+	std::shared_ptr<meter>	meterp(mtr);
 
 	sleep(10);
 

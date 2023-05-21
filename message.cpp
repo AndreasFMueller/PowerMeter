@@ -41,6 +41,15 @@ void	message::accumulate(const std::chrono::duration<float>& duration,
 	}
 }
 
+void	message::update(const std::string& name, const float value) {
+	std::map<std::string, float>::const_iterator	i = find(name);
+	if (i == end()) {
+		insert(std::make_pair(name, value));
+	} else {
+		operator[](name) = value;
+	}
+}
+
 void	message::finalize(const std::string& name, float factor) {
 	std::map<std::string, float>::const_iterator	i = find(name);
 	if (i == end()) {

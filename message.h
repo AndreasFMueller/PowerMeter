@@ -18,6 +18,7 @@ namespace powermeter {
 class message : public std::map<std::string, float> {
 	std::chrono::system_clock::time_point	_when;
 public:
+	static std::pair<std::string, std::string>	split(const std::string& s);
 	message(const std::chrono::system_clock::time_point& when);
 	const std::chrono::system_clock::time_point&	when() const;
 	void	when(const std::chrono::system_clock::time_point& w);
@@ -25,6 +26,7 @@ public:
 	void	accumulate(const std::chrono::duration<float>& duration,
 			const std::string& name,
 			const float value);
+	void	update(const std::string& name, const float value);
 	void	finalize(const std::string& name, float factor);
 };
 
