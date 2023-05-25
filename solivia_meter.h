@@ -7,12 +7,19 @@
 #define _solivia_meter_h
 
 #include <meter.h>
+#include <netinet/in.h>
 
 namespace powermeter {
 
 class solivia_meter : public meter {
-	short	_port;
-	int	_fd;
+	short	_receive_port;
+	int	_receive_fd;
+	struct sockaddr_in	_addr;
+	short	_send_port;
+	int	_send_fd;
+	unsigned char	_id;
+	bool	_passive;
+	unsigned char	_request[9];
 	// analysis of a packet
 	static const size_t	packetsize = 164;
 	unsigned char	_packet[packetsize];
@@ -67,6 +74,7 @@ class solivia_meter : public meter {
 	float	temperature() const { return floatat(inverter + 22, 1); }
 	unsigned short	crc() const { return shortat(packetsize - 3); }
 	unsigned char	etx() const { return _packet[packetsize - 1]; }
+	int	getpacket();
 protected:
 	virtual message	integrate();
 public:

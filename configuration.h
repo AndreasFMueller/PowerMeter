@@ -22,9 +22,12 @@ public:
 	int	intvalue(const std::string& name, int defaultvalue) const;
 	float	floatvalue(const std::string& name) const;
 	float	floatvalue(const std::string& name, float defaultvalue) const;
+	bool	boolvalue(const std::string& name) const;
+	bool	boolvalue(const std::string& name, bool defaultvalue) const;
 	void	set(const std::string& name, const std::string& value);
 	void	set(const std::string& name, int value);
 	void	set(const std::string& name, float value);
+	void	set(const std::string& name, bool value);
 };
 
 } // namespace powermeter

@@ -25,6 +25,8 @@ configuration::configuration() {
 		std::string("1")));
 	insert(std::make_pair(std::string("meterinterval"),
 		std::string("5")));
+	insert(std::make_pair(std::string("meterpassive"),
+		std::string("no")));
 }
 
 static std::string	ltrim(const std::string& s) {
@@ -102,6 +104,18 @@ float	configuration::floatvalue(const std::string& name) const {
 	return std::stod(i->second);
 }
 
+bool	configuration::boolvalue(const std::string& name) const {
+	auto	i = find(name);
+	if (i == end()) {
+		std::string	msg = stringprintf("cannot find: %s",
+					name.c_str());
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+	return i->second == std::string("yes");
+}
+
+
 const std::string&	configuration::stringvalue(const std::string& name,
 				const std::string& defaultvalue) const {
 	auto	i = find(name);
@@ -127,6 +141,14 @@ float	configuration::floatvalue(const std::string& name, float defaultvalue) con
 	return std::stod(i->second);
 }
 
+bool	configuration::boolvalue(const std::string& name, bool defaultvalue) const {
+	auto	i = find(name);
+	if (i == end()) {
+		return defaultvalue;
+	}
+	return i->second == std::string("yes");
+}
+
 void	configuration::set(const std::string& name, const std::string& value) {
 	insert(std::make_pair(name, value));
 }
@@ -137,6 +159,11 @@ void	configuration::set(const std::string& name, int value) {
 
 void	configuration::set(const std::string& name, float value) {
 	insert(std::make_pair(name, std::to_string(value)));
+}
+
+void	configuration::set(const std::string& name, bool value) {
+	insert(std::make_pair(name,
+		(value) ? std::string("yes") : std::string("no")));
 }
 
 } // namespace powermeter
