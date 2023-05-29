@@ -9,9 +9,8 @@
 #include <stdexcept>
 #include <message.h>
 #include <database.h>
-#include <solivia_meter.h>
-#include <modbus_meter.h>
 #include <meterfactory.h>
+#include <ale3_meter.h>
 #include <debug.h>
 #include <sys/stat.h>
 #include <syslog.h>
@@ -129,7 +128,7 @@ int	main(int argc, char *argv[]) {
 				"running in the foreground");
 			break;
 		case 'x':
-			modbus_meter::simulate = true;
+			ale3_meter::simulate = true;
 			break;
 		case 'V':
 			std::cout << "powermeter " << VERSION << std::endl;

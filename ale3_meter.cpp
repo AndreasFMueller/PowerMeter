@@ -1,9 +1,9 @@
 /*
- * modbus_meter.cpp
+ * ale3_meter.cpp
  *
  * (c) 2023 Prof Dr Andreas Müller
  */
-#include <modbus_meter.h>
+#include <ale3_meter.h>
 #include <stdexcept>
 #include <debug.h>
 #include <format.h>
@@ -13,7 +13,7 @@
 
 namespace powermeter {
 
-bool	modbus_meter::simulate = false;
+bool	ale3_meter::simulate = false;
 
 /**
  * \brief Constructor for a meter object
@@ -21,7 +21,7 @@ bool	modbus_meter::simulate = false;
  * \param config	configuration
  * \param queue		the queue to place messages on
  */
-modbus_meter::modbus_meter(const configuration& config, messagequeue& queue)
+ale3_meter::ale3_meter(const configuration& config, messagequeue& queue)
 	: meter(config, queue),
 	  _hostname(config.stringvalue("meterhostname")),
 	  _port(config.intvalue("meterport")),
@@ -82,7 +82,7 @@ modbus_meter::modbus_meter(const configuration& config, messagequeue& queue)
 /**
  * \brief Destroy the meter class
  */
-modbus_meter::~modbus_meter() {
+ale3_meter::~ale3_meter() {
 	stopthread();
 	// clean up the connection
 	if (_mb) {
@@ -146,7 +146,7 @@ modbus_meter::~modbus_meter() {
  * This method integrates until the end of the current minute and
  * then extrapolates the power to the full minute
  */
-message	modbus_meter::integrate() {
+message	ale3_meter::integrate() {
 	std::unique_lock<std::mutex>	lock(_mutex);
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "start integrating");
 
@@ -312,7 +312,7 @@ message	modbus_meter::integrate() {
 /**
  * \brief Read data from simulator
  */
-void	modbus_meter::read(unsigned short *registers) {
+void	ale3_meter::read(unsigned short *registers) {
 	memset(registers, 0, 53 * sizeof(short));
 	registers[ALE3_FIRMWARE_VERSION] = 11;
 	registers[ALE3_NUMBER_OF_REGISTERS] = 52;

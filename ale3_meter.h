@@ -1,5 +1,5 @@
 /*
- * modbus_meter.h -- connection to the power meter
+ * ale3_meter.h -- connection to the power meter
  *
  * (c) 2023 Prof Dr Andreas Müller
  */
@@ -18,7 +18,7 @@
 
 namespace powermeter {
 
-class modbus_meter : public meter {
+class ale3_meter : public meter {
 protected:
 	// configuration data
 	std::string		_hostname;
@@ -31,8 +31,8 @@ protected:
 	// reimplement the integration method
 	virtual message	integrate();
 public:
-	modbus_meter(const configuration& config, messagequeue& queue);
-	~modbus_meter();
+	ale3_meter(const configuration& config, messagequeue& queue);
+	~ale3_meter();
 private:
 	simulator	sim;
 	void	read(unsigned short *registers);

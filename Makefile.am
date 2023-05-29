@@ -13,7 +13,7 @@ libpowermeter_la_SOURCES =						\
 	debug.cpp							\
 	format.cpp							\
 	message.cpp							\
-	modbus_meter.cpp						\
+	ale3_meter.cpp							\
 	meter.cpp							\
 	meterfactory.cpp						\
 	simulator.cpp							\
@@ -27,7 +27,7 @@ noinst_HEADERS =							\
 	message.h							\
 	meter.h								\
 	meterfactory.h							\
-	modbus_meter.h							\
+	ale3_meter.h							\
 	simulator.h							\
 	solivia_meter.h
 
