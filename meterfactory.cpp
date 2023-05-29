@@ -6,6 +6,7 @@
 #include <meterfactory.h>
 #include <solivia_meter.h>
 #include <ale3_meter.h>
+#include <modbus_meter.h>
 #include <format.h>
 #include <debug.h>
 
@@ -15,6 +16,9 @@ std::shared_ptr<meter>	meterfactory::get(const std::string& metertypename,
 		messagequeue& queue) {
 	if (metertypename == "solivia") {
 		return std::shared_ptr<meter>(new solivia_meter(_config, queue));
+	}
+	if (metertypename == "ale3") {
+		return std::shared_ptr<meter>(new ale3_meter(_config, queue));
 	}
 	if (metertypename == "modbus") {
 		return std::shared_ptr<meter>(new modbus_meter(_config, queue));

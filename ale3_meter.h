@@ -3,8 +3,8 @@
  *
  * (c) 2023 Prof Dr Andreas Müller
  */
-#ifndef _modbus_meter_h
-#define _modbus_meter_h
+#ifndef _ale3_meter_h
+#define _ale3_meter_h
 
 #include <meter.h>
 #include <message.h>
@@ -42,4 +42,4 @@ public:
 
 } // namespace powermeter
 
-#endif /* _modbus_meter_h */
+#endif /* _ale3_meter_h */

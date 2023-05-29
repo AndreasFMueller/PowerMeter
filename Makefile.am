@@ -8,18 +8,20 @@ EXTRA_DIST = SBC_Energymeter-ALE3-Modbus_eng_tds.pdf meteo.xml
 noinst_LTLIBRARIES = libpowermeter.la
 
 libpowermeter_la_SOURCES =						\
+	ale3_meter.cpp							\
 	configuration.cpp						\
 	database.cpp							\
 	debug.cpp							\
 	format.cpp							\
 	message.cpp							\
-	ale3_meter.cpp							\
 	meter.cpp							\
 	meterfactory.cpp						\
+	modbus_meter.cpp						\
 	simulator.cpp							\
 	solivia_meter.cpp
 
 noinst_HEADERS =							\
+	ale3_meter.h							\
 	configuration.h							\
 	database.h							\
 	debug.h								\
@@ -27,7 +29,7 @@ noinst_HEADERS =							\
 	message.h							\
 	meter.h								\
 	meterfactory.h							\
-	ale3_meter.h							\
+	modbus_meter.h							\
 	simulator.h							\
 	solivia_meter.h
 
