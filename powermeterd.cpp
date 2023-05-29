@@ -41,6 +41,7 @@ static struct option	longopts[] = {
 { "version",		no_argument,		NULL,		'V' },
 { "foreground",		no_argument,		NULL,		'f' },
 { "simulate",		no_argument,		NULL,		'x' },
+{ "syslog", 		no_argument,		NULL,		'l' },
 { NULL,			0,			NULL,		 0  }
 };
 
@@ -62,11 +63,12 @@ int	main(int argc, char *argv[]) {
 	int	c;
 	configuration	config;
 	bool	foreground = false;
-	debug_setup("powermeterd", "file:///-");
-	debuglevel = LOG_DEBUG;
+	debug_set_ident("powermeterd");
+	//debuglevel = LOG_DEBUG;
+	debugthreads = 1;
 
 	// read parameters from the command line
-	while (EOF != (c = getopt_long(argc, argv, "c:dH:D:U:P:Q:S:s::m:p:i:Vxt:",
+	while (EOF != (c = getopt_long(argc, argv, "c:dH:D:U:P:Q:S:s::m:p:i:Vxt:l",
 		longopts, NULL)))
 		switch (c) {
 		case 'c':
@@ -138,6 +140,9 @@ int	main(int argc, char *argv[]) {
 		case 't':
 			config.set("metertype", optarg);
 			break;
+		case 'l':
+			debug_syslog(LOG_LOCAL0);
+			break;
 		}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "command line read");
 
@@ -176,8 +181,8 @@ int	main(int argc, char *argv[]) {
 	// wait for the message queue to report a problem
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "waiting for queue event");
 	queue.wait(std::chrono::seconds(120));
-
-	return EXIT_SUCCESS;
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "queue timeout, abort");
+	abort();
 }
 
 } // namespace powermeter

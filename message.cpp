@@ -100,6 +100,8 @@ message	messagequeue::extract() {
 	std::unique_lock<std::mutex>	lock(_mutex);
 	while (_active) {
 		if (size() > 0) {
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "message present, "
+				"retrieve it");
 			auto result = back();
 			pop_back();
 			_last_extract = std::chrono::system_clock::now();
@@ -114,6 +116,11 @@ message	messagequeue::extract() {
 /**
  * \brief Wait for the queue to get signaled
  *
+ * Each time a new message is submitted to the queue, the _signal is 
+ * notified. By waiting for the _signal to be raised for a time longer
+ * than the expected interval between packets we an detect when creating
+ * packets by the meter has stopped.
+ *
  * \param howlong	how long to wait for a notification
  */
 messagequeue::status	messagequeue::wait(const std::chrono::duration<float>& howlong) {
@@ -121,6 +128,7 @@ messagequeue::status	messagequeue::wait(const std::chrono::duration<float>& howl
 	while (_active) {
 		switch (_signal.wait_for(lock, howlong)) {
 		case std::cv_status::timeout:
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "waiting timed out");
 			return timeout;
 		case std::cv_status::no_timeout:
 			break;

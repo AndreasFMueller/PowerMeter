@@ -10,7 +10,7 @@ noinst_LTLIBRARIES = libpowermeter.la
 libpowermeter_la_SOURCES =						\
 	configuration.cpp						\
 	database.cpp							\
-	debug.c								\
+	debug.cpp							\
 	format.cpp							\
 	message.cpp							\
 	modbus_meter.cpp						\
@@ -45,6 +45,6 @@ dbport = 3307
 
 test:	powermeterd powermeter.config
 	./powermeterd --foreground \
-		--config=powermeter.config \
+		--config=/usr/local/etc/solivia.config \
 		--debug
 

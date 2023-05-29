@@ -205,9 +205,8 @@ int	solivia_meter::getpacket() {
 		//debug(LOG_DEBUG, DEBUG_LOG, 0, "reading a packet");
 		rc = read(_receive_fd, _packet, packetsize);
 		if (rc < 0) {
-			std::string	 msg = stringprintf("cannot read: %s",
+			debug(LOG_ERR, DEBUG_LOG, 0, "cannot read packet: %s",
 				strerror(errno));
-			debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 			continue;
 		}
 
@@ -220,13 +219,14 @@ int	solivia_meter::getpacket() {
 
 		// skip if this is a bad packet
 		if ((0x02 != stx()) || (0x06 != ack())) {
-			debug(LOG_DEBUG, DEBUG_LOG, 0, "strange packet");
+			debug(LOG_ERR, DEBUG_LOG, 0, "incorrect packet "
+				"format, skipping");
 			continue;
 		}
 
 		// check the id
 		if (_id != id()) {
-			debug(LOG_DEBUG, DEBUG_LOG, 0, "ID mismatch, skip");
+			debug(LOG_ERR, DEBUG_LOG, 0, "ID mismatch, skipping");
 			continue;
 		}
 
@@ -235,20 +235,25 @@ int	solivia_meter::getpacket() {
 		crc.process_bytes(_packet + 1, packetsize - 4);
 		if (crc.checksum() != crc()) {
 			debug(LOG_ERR, DEBUG_LOG, 0,
-				"bad backed CRC: %hu != %hu",
+				"bad backed CRC: %hu != %hu, ignoring",
 				crc.checksum(), crc());
 			continue;
 		}
+
+		// if we get to this point, then we have a correct packet
+		// in the packet buffer
 		return 1;
 	}
+	// handle the case where select did not work
 	if (rc < 0) {
 		std::string	msg = stringprintf("select error: %s",
 			strerror(errno));
 		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		throw std::runtime_error(msg);
 	}
+	// handle timeout
 	if (rc == 0) {
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "no packet");
+		debug(LOG_ERR, DEBUG_LOG, 0, "no packet, timeout");
 		return 0;
 	}
 	// should not get here 
@@ -316,7 +321,7 @@ message	solivia_meter::integrate() {
 		case std::cv_status::no_timeout:
 			// this means we were signaled to interrup
 			//debug(LOG_DEBUG, DEBUG_LOG, 0, "wait interrupted");
-			std::string     msg("meter thread interrupted");
+			std::string     msg("meter thread interrupted by signal");
 			debug(LOG_DEBUG, DEBUG_LOG, 0, "%s", msg.c_str());
 			throw std::runtime_error(msg);
 		}
@@ -324,7 +329,8 @@ message	solivia_meter::integrate() {
 		// get a new packet
 		lock.unlock();
 		if (0 == getpacket()) {
-			debug(LOG_ERR, DEBUG_LOG, 0, "no packet, maybe lost");
+			debug(LOG_ERR, DEBUG_LOG, 0, "no packet, maybe lost, "
+				"trying next packet");
 			continue;
 		}
 		lock.lock();

@@ -129,7 +129,6 @@ database::database(const configuration& config,
 
 	// fetch as many rows as there are
 	while (0 == (rc = mysql_stmt_fetch(stmt))) {
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "got another row");
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "adding sensors '%s' -> %d",
 			sensorname, sensorid);
 		_sensors.insert(std::make_pair(std::string(sensorname),

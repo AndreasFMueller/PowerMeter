@@ -85,13 +85,20 @@ void	meter::run() {
 	while (_active) {
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "wait for a message");
 		// during an integration interval
-		message	m = integrate();
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "got a new message");
-		
-		// submit it to the queue
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "submit message");
-		_queue.submit(m);
+		try {
+			message	m = integrate();
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "got a new message");
+			
+			// submit it to the queue
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "submit message");
+			_queue.submit(m);
+		} catch (const std::exception& x) {
+			debug(LOG_ERR, DEBUG_LOG, 0, "cannot process a "
+				"message: %s, %s", x.what(),
+				(_active) ? "retry" : "terminate");
+		}
 	}
+	debug(LOG_INFO, DEBUG_LOG, 0, "meter thread has been deactivated");
 }
 
 } // namespace powermeter
