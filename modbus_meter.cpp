@@ -5,14 +5,76 @@
  */
 #include <modbus_meter.h>
 #include <debug.h>
+#include <netdb.h>
+#include <arpa/inet.h>
+#include <cstring>
+#include <format.h>
 
 namespace powermeter {
 
+/**
+ * \brief Construct a modbus power meter
+ *
+ * \param config	the configuration to use to get parameters
+ * \param queue		the message queue to use to send messages
+ */
 modbus_meter::modbus_meter(const configuration& config, messagequeue& queue)
 	: meter(config, queue) {
+	// get the host name of the meter
+	std::string	hostname = config.stringvalue("meterhostname",
+		"localhost");
+
+	// get the ip address of the modbus device
+	struct hostent	*hp = gethostbyname(hostname.c_str());
+	if (NULL == hp) {
+		std::string	msg = stringprintf("cannot resolve '%s'",
+			hostname.c_str());
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg);
+		throw std::runtime_error(msg);
+	}
+
+	// check that we have an address
+	if (NULL == hp->h_addr) {
+		std::string	msg = stringprintf("no address for '%s'",
+			hostname);
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+	
+	// convert IP address to string
+	struct in_addr	*ia = (struct in_addr *) hp->h_addr_list[0];
+	char	*ip = strdup(inet_ntoa(*ia));
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "connecting to IP %s", ip);
+
+	// get the port number from the configuration
+	int	port = config.intvalue("meterport", 502);
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "using port %d", port);
+
+	// initialize the modbus device
+	mb = modbus_new_tcp(ip, port);
+	if (NULL == mb) {
+		free(ip);
+		std::string	msg = stringprintf("cannot create");
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+	free(ip);
+
+	// connect to the meter
+	if (modbus_connect(mb) < 0) {
+		debug(LOG_ERR, DEBUG_LOG, 0, "cannot connect to the meter");
+		throw std::runtime_error("cannot connect");
+	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "successfully connected to %s:%d", 
+		hostname.c_str(), port);
 }
 
+/**
+ * \brief Destroy the modbus device
+ */
 modbus_meter::~modbus_meter() {
+	modbus_close(mb);
+	modbus_free(mb);
 }
 
 message	modbus_meter::integrate() {
@@ -79,7 +141,7 @@ message	modbus_meter::integrate() {
 		}
 
 		// get a new packet
-		// XXX get a package
+		// XXX get a packet
 
 		// end time for this integration step
 		std::chrono::duration<float>    delta(std::chrono::system_clock::now() - previous);

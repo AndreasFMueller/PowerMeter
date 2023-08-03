@@ -39,14 +39,13 @@ powermeterd_SOURCES = powermeterd.cpp
 powermeterd_DEPENDENCIES = libpowermeter.la
 powermeterd_LDFLAGS = -L. -lpowermeter
 
-dbhost = antonius
-dbname = meteo
-dbuser = powermaster
-dbpassword = tom,ri5tentR
-dbport = 3307
-
 test:	powermeterd powermeter.config
 	./powermeterd --foreground \
 		--config=/usr/local/etc/solivia.config \
+		--debug
+
+salidomo:	powermeterd salidomo.config
+	./powermeterd --foreground \
+		--config=./salidomo.config \
 		--debug
 

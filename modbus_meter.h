@@ -7,10 +7,12 @@
 #define _modbus_meter_h
 
 #include <meter.h>
+#include <modbus.h>
 
 namespace powermeter {
 
 class modbus_meter : public meter {
+	modbus_t	*mb;
 protected:
 	virtual message integrate();
 public:
