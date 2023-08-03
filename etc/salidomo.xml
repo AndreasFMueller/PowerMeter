@@ -1,0 +1,86 @@
+<?xml version="1.0"?>
+<!--
+  solivia.xml
+
+  configuration for the Salidomo battery
+
+  (c) 2023 Prof Dr Andreas Müller
+  -->
+<meteo>
+  <database>
+    <hostname>ferdinand</hostname>
+    <port>3307</port>
+    <dbname>powermeter</dbname>
+    <user>powermaster</user>
+    <password>tom,ri5tentR</password>
+    <writer>powermaster</writer>
+    <writerpassword>tom,ri5tentR</writerpassword>
+    <prefix>power</prefix>
+  </database>
+  <station name="Salidomo">
+    <sensors>
+      <sensor name="pv">
+        <field>prms_phase1</field>
+        <field>prms_phase2</field>
+        <field>prms_phase3</field>
+      </sensor>
+      <sensor name="consumption">
+        <field>prms_phase1</field>
+        <field>prms_phase2</field>
+        <field>prms_phase3</field>
+      </sensor>
+      <sensor name="grid">
+        <field>prms_phase1</field>
+        <field>prms_phase2</field>
+        <field>prms_phase3</field>
+      </sensor>
+      <sensor name="battery">
+        <field>power</field>
+        <field>charge</field>
+      </sensor>
+    </sensors>
+    <averages>
+      <sensor name="pv">
+	<average name="prms_phase1"     base="prms_phase1"   operator="avg"/>
+	<average name="prms_phase1_min" base="prms_phase1"   operator="min"/>
+	<average name="prms_phase1_max" base="prms_phase1"   operator="max"/>
+	<average name="prms_phase2"     base="prms_phase2"   operator="avg"/>
+	<average name="prms_phase2_min" base="prms_phase2"   operator="min"/>
+	<average name="prms_phase2_max" base="prms_phase2"   operator="max"/>
+	<average name="prms_phase3"     base="prms_phase3"   operator="avg"/>
+	<average name="prms_phase3_min" base="prms_phase3"   operator="min"/>
+	<average name="prms_phase3_max" base="prms_phase3"   operator="max"/>
+      </sensor>
+      <sensor name="consumption">
+	<average name="prms_phase1"     base="prms_phase1"   operator="avg"/>
+	<average name="prms_phase1_min" base="prms_phase1"   operator="min"/>
+	<average name="prms_phase1_max" base="prms_phase1"   operator="max"/>
+	<average name="prms_phase2"     base="prms_phase2"   operator="avg"/>
+	<average name="prms_phase2_min" base="prms_phase2"   operator="min"/>
+	<average name="prms_phase2_max" base="prms_phase2"   operator="max"/>
+	<average name="prms_phase3"     base="prms_phase3"   operator="avg"/>
+	<average name="prms_phase3_min" base="prms_phase3"   operator="min"/>
+	<average name="prms_phase3_max" base="prms_phase3"   operator="max"/>
+      </sensor>
+      <sensor name="grid">
+	<average name="prms_phase1"     base="prms_phase1"   operator="avg"/>
+	<average name="prms_phase1_min" base="prms_phase1"   operator="min"/>
+	<average name="prms_phase1_max" base="prms_phase1"   operator="max"/>
+	<average name="prms_phase2"     base="prms_phase2"   operator="avg"/>
+	<average name="prms_phase2_min" base="prms_phase2"   operator="min"/>
+	<average name="prms_phase2_max" base="prms_phase2"   operator="max"/>
+	<average name="prms_phase3"     base="prms_phase3"   operator="avg"/>
+	<average name="prms_phase3_min" base="prms_phase3"   operator="min"/>
+	<average name="prms_phase3_max" base="prms_phase3"   operator="max"/>
+      </sensor>
+      <sensor name="battery">
+	<average name="power"      base="power"   operator="avg"/>
+	<average name="power_min"  base="power"   operator="min"/>
+	<average name="power_max"  base="power"   operator="max"/>
+	<average name="charge"     base="charge"  operator="avg"/>
+	<average name="charge_min" base="charge"  operator="min"/>
+	<average name="charge_max" base="charge"  operator="max"/>
+      </sensor>
+    </averages>
+  </station>
+</meteo>

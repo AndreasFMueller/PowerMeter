@@ -1,0 +1,10 @@
+[Unit]
+Description=Solivia averaging
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+Environment="LD_LIBRARY_PATH=/usr/local/lib"
+ExecStart=/usr/local/bin/meteoavg --foreground --config=/usr/local/etc/solivia.xml --station=Solivia

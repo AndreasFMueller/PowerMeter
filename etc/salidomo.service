@@ -1,0 +1,9 @@
+[Unit]
+Description=Salidomo server
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+ExecStart=/usr/local/bin/powermeterd --syslog --foreground --config=/usr/local/etc/salidomo.config

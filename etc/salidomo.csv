@@ -1,0 +1,12 @@
+#meteoname,unit,address,type,scalefactor,operator
+pv.prms_phase1,100,811,uint16,1,average
+pv.prms_phase2,100,812,uint16,1,average
+pv.prms_phase3,100,813,uint16,1,average
+consumption.prms_phase1,100,817,uint16,1,average
+consumption.prms_phase2,100,818,uint16,1,average
+consumption.prms_phase3,100,819,uint16,1,average
+grid.prms_phase1,100,820,int16,1,average
+grid.prms_phase2,100,821,int16,1,average
+grid.prms_phase3,100,822,int16,1,average
+battery.power,100,842,int16,1,average
+battery.charge,100,843,uint16,1,average

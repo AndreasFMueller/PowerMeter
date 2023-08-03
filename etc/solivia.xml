@@ -1,0 +1,360 @@
+<?xml version="1.0"?>
+<!--
+  solivia.xml
+
+  configuration for the Delta Solivia TL 10 PV inverter
+
+  (c) 2023 Prof Dr Andreas Müller
+  -->
+<meteo>
+  <database>
+    <hostname>ferdinand</hostname>
+    <port>3307</port>
+    <dbname>powermeter</dbname>
+    <user>powermaster</user>
+    <password>tom,ri5tentR</password>
+    <writer>powermaster</writer>
+    <writerpassword>tom,ri5tentR</writerpassword>
+    <prefix>power</prefix>
+  </database>
+  <station name="Solivia">
+    <sensors>
+      <sensor name="phase1">
+        <field>voltage</field>
+        <field>current</field>
+        <field>power</field>
+        <field>frequency</field>
+      </sensor>
+      <sensor name="phase2">
+        <field>voltage</field>
+        <field>current</field>
+        <field>power</field>
+        <field>frequency</field>
+      </sensor>
+      <sensor name="phase3">
+        <field>voltage</field>
+        <field>current</field>
+        <field>power</field>
+        <field>frequency</field>
+      </sensor>
+      <sensor name="string1">
+        <field>voltage</field>
+        <field>current</field>
+        <field>power</field>
+      </sensor>
+      <sensor name="string2">
+        <field>voltage</field>
+        <field>current</field>
+        <field>power</field>
+      </sensor>
+      <sensor name="inverter">
+        <field>power</field>
+        <field>energy</field>
+        <field>feedtime</field>
+        <field>temperature</field>
+      </sensor>
+    </sensors>
+    <averages>
+      <sensor name="phase1">
+	<average name="voltage"         base="voltage"     operator="avg"/>
+	<average name="voltage_min"     base="voltage"     operator="min"/>
+	<average name="voltage_max"     base="voltage"     operator="max"/>
+	<average name="current"         base="current"     operator="avg"/>
+	<average name="current_min"     base="current"     operator="min"/>
+	<average name="current_max"     base="current"     operator="max"/>
+	<average name="power"           base="power"       operator="avg"/>
+	<average name="power_min"       base="power"       operator="min"/>
+	<average name="power_max"       base="power"       operator="max"/>
+	<average name="frequency"       base="frequency"   operator="avg"/>
+      </sensor>
+      <sensor name="phase2">
+	<average name="voltage"         base="voltage"     operator="avg"/>
+	<average name="voltage_min"     base="voltage"     operator="min"/>
+	<average name="voltage_max"     base="voltage"     operator="max"/>
+	<average name="current"         base="current"     operator="avg"/>
+	<average name="current_min"     base="current"     operator="min"/>
+	<average name="current_max"     base="current"     operator="max"/>
+	<average name="power"           base="power"       operator="avg"/>
+	<average name="power_min"       base="power"       operator="min"/>
+	<average name="power_max"       base="power"       operator="max"/>
+	<average name="frequency"       base="frequency"   operator="avg"/>
+      </sensor>
+      <sensor name="phase3">
+	<average name="voltage"         base="voltage"     operator="avg"/>
+	<average name="voltage_min"     base="voltage"     operator="min"/>
+	<average name="voltage_max"     base="voltage"     operator="max"/>
+	<average name="current"         base="current"     operator="avg"/>
+	<average name="current_min"     base="current"     operator="min"/>
+	<average name="current_max"     base="current"     operator="max"/>
+	<average name="power"           base="power"       operator="avg"/>
+	<average name="power_min"       base="power"       operator="min"/>
+	<average name="power_max"       base="power"       operator="max"/>
+	<average name="frequency"       base="frequency"   operator="avg"/>
+      </sensor>
+      <sensor name="string1">
+	<average name="voltage"         base="voltage"     operator="avg"/>
+	<average name="voltage_min"     base="voltage"     operator="min"/>
+	<average name="voltage_max"     base="voltage"     operator="max"/>
+	<average name="current"         base="current"     operator="avg"/>
+	<average name="current_min"     base="current"     operator="min"/>
+	<average name="current_max"     base="current"     operator="max"/>
+	<average name="power"           base="power"       operator="avg"/>
+	<average name="power_min"       base="power"       operator="min"/>
+	<average name="power_max"       base="power"       operator="max"/>
+      </sensor>
+      <sensor name="string2">
+	<average name="voltage"         base="voltage"     operator="avg"/>
+	<average name="voltage_min"     base="voltage"     operator="min"/>
+	<average name="voltage_max"     base="voltage"     operator="max"/>
+	<average name="current"         base="current"     operator="avg"/>
+	<average name="current_min"     base="current"     operator="min"/>
+	<average name="current_max"     base="current"     operator="max"/>
+	<average name="power"           base="power"       operator="avg"/>
+	<average name="power_min"       base="power"       operator="min"/>
+	<average name="power_max"       base="power"       operator="max"/>
+      </sensor>
+      <sensor name="inverter">
+	<average name="power"           base="power"       operator="avg"/>
+	<average name="power_min"       base="power"       operator="min"/>
+	<average name="power_max"       base="power"       operator="max"/>
+	<average name="energy"          base="energy"      operator="max"/>
+	<average name="feedtime"        base="feedtime"    operator="max"/>
+	<average name="temperature"     base="temperature" operator="avg"/>
+	<average name="temperature_min" base="temperature" operator="min"/>
+	<average name="temperature_max" base="temperature" operator="max"/>
+      </sensor>
+    </averages>
+  </station>
+  <graphs lockfile="./lockfile" running="3" queued="10">
+    <graph name="Solivia.power" offset="3600"
+        height="144" width="500" bgcolor="#ffffff" fgcolor="#000000">
+      <leftlabel align="center">Power (kW)</leftlabel>
+      <leftaxis type="static" min="0" max="6" first="0" last="6"
+	step="1" format="%.1f" gridlines="yes" ticks="yes"/>
+      <leftaxis type="static" min="0" max="2" first="0" last="2"
+        interval="86400"
+	step="0.5" format="%.1f" gridlines="yes" ticks="yes"/>
+      <graphwindow llx="55" lly="19" urx="455" ury="139"/>
+      <channels>
+	<query>
+	  <select name="p1">Solivia.phase1.power</select>
+	  <select name="p2">Solivia.phase2.power</select>
+	  <select name="p3">Solivia.phase3.power</select>
+	  <select name="t">Solivia.inverter.power</select>
+	  <data name="p123kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="p1"/>
+	        <value name="p2"/>
+	        <value name="p3"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="p12kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="p1"/>
+	        <value name="p2"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="p1kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <value name="p1"/>
+	    </mult>
+	  </data>
+	  <data name="tkW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <value name="t"/>
+	    </mult>
+	  </data>
+	</query>
+	<channel color="#ff99cc" type="range" scale="left"
+	  nameupper="p123kW" namelower="p12kW"/>
+	<channel color="#cc99ff" type="range" scale="left"
+	  nameupper="p12kW" namelower="p1kW"/>
+	<channel color="#99ccff" type="histogram" scale="left" name="p1kW"/>
+	<channel color="#990000" type="curve" scale="left" name="tkW"/>
+      </channels>
+    </graph>
+    <graph name="Solivia.solar" offset="3600"
+        height="144" width="500" bgcolor="#ffffff" fgcolor="#000000">
+      <leftlabel align="center">Power (kW)</leftlabel>
+      <leftaxis type="static" min="0" max="6" first="0" last="6"
+	step="1" format="%.1f" gridlines="yes" ticks="yes"/>
+      <leftaxis type="static" min="0" max="2" first="0" last="2"
+        interval="86400"
+	step="0.5" format="%.1f" gridlines="yes" ticks="yes"/>
+      <graphwindow llx="55" lly="19" urx="455" ury="139"/>
+      <channels>
+	<query>
+	  <select name="p1">Solivia.phase1.power</select>
+	  <select name="p2">Solivia.phase2.power</select>
+	  <select name="p3">Solivia.phase3.power</select>
+	  <select name="s1">Solivia.string1.power</select>
+	  <select name="s2">Solivia.string2.power</select>
+	  <select name="t">Solivia.inverter.power</select>
+	  <data name="p123kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="p1"/>
+	        <value name="p2"/>
+	        <value name="p3"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="p12kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="p1"/>
+	        <value name="p2"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="p1kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <value name="p1"/>
+	    </mult>
+	  </data>
+	  <data name="s12kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="s1"/>
+	        <value name="s2"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="s1kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <value name="s1"/>
+	    </mult>
+	  </data>
+	  <data name="lkW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <diff>
+		<value name="s12kW"/>
+		<value name="p123kW"/>
+	      </diff>
+	    </mult>
+	  </data>
+	</query>
+	<channel color="#339900" type="range" scale="left"
+	  nameupper="s12kW" namelower="s1kW"/>
+	<channel color="#66cc00" type="histogram" scale="left" name="s1kW"/>
+	<channel color="#000000" type="histogram" scale="left" name="lkW"/>
+      </channels>
+    </graph>
+    <graph name="Solivia.loss" offset="3600"
+        height="144" width="500" bgcolor="#ffffff" fgcolor="#000000">
+      <leftlabel align="center">Losses (W)</leftlabel>
+      <leftaxis type="static" min="0" max="250" first="0" last="250"
+	step="50" format="%.0f" gridlines="yes" ticks="yes"/>
+      <rightlabel align="center">Efficiency (%)</rightlabel>
+      <rightaxis type="static" min="0" max="100" first="0" last="100"
+	step="20" format="%3.0f" gridlines="no" ticks="yes"/>
+      <graphwindow llx="55" lly="19" urx="455" ury="139"/>
+      <channels>
+	<query>
+	  <select name="p1">Solivia.phase1.power</select>
+	  <select name="p2">Solivia.phase2.power</select>
+	  <select name="p3">Solivia.phase3.power</select>
+	  <select name="s1">Solivia.string1.power</select>
+	  <select name="s2">Solivia.string2.power</select>
+	  <data name="p123kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="p1"/>
+	        <value name="p2"/>
+	        <value name="p3"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="ienergy">
+	    <function name="integrate">
+	      <value name="p123kW"/>
+	    </function>
+	  </data>
+	  <data name="s12kW">
+	    <mult>
+	      <constant value="0.001"/>
+	      <sum>
+	        <value name="s1"/>
+	        <value name="s2"/>
+	      </sum>
+	    </mult>
+	  </data>
+	  <data name="lkW">
+	    <mult>
+	      <constant value="1000"/>
+	      <diff>
+		<value name="s12kW"/>
+		<value name="p123kW"/>
+	      </diff>
+	    </mult>
+	  </data>
+	  <data name="efficiency">
+	    <mult>
+	      <constant value="100"/>
+	      <quot>
+	        <value name="p123kW"/>
+	        <value name="s12kW"/>
+	      </quot>
+	    </mult>
+	  </data>
+	</query>
+	<channel color="#ff9900" type="histogram" scale="left" name="lkW"/>
+	<channel color="#009900" type="curve" scale="right" name="efficiency"/>
+      </channels>
+    </graph>
+    <graph name="Solivia.voltage" offset="3600"
+        height="144" width="500" bgcolor="#ffffff" fgcolor="#000000">
+      <leftlabel align="center">Voltage</leftlabel>
+      <leftaxis type="static" min="400" max="430" first="400" last="430"
+	step="10" format="%.0f" gridlines="yes" ticks="yes"/>
+      <graphwindow llx="55" lly="19" urx="455" ury="139" alias="yes"/>
+      <channels>
+	<query>
+	  <select name="u1">Solivia.phase1.voltage</select>
+	  <select name="u1min">Solivia.phase1.voltage_min</select>
+	  <select name="u1max">Solivia.phase1.voltage_max</select>
+	  <select name="u2">Solivia.phase2.voltage</select>
+	  <select name="u2min">Solivia.phase2.voltage_min</select>
+	  <select name="u2max">Solivia.phase2.voltage_max</select>
+	  <select name="u3">Solivia.phase3.voltage</select>
+	  <select name="u3min">Solivia.phase3.voltage_min</select>
+	  <select name="u3max">Solivia.phase3.voltage_max</select>
+	  <data name="min">
+	    <min>
+	      <value name="u1min"/>
+	      <value name="u2min"/>
+	      <value name="u3min"/>
+	    </min>
+	  </data>
+	  <data name="max">
+	    <max>
+	      <value name="u1max"/>
+	      <value name="u2max"/>
+	      <value name="u3max"/>
+	    </max>
+	  </data>
+        </query>
+	<channel color="#cccccc" type="range" scale="left"
+	  namelower="min" nameupper="max"/>
+	<channel color="#cc00cc" type="curve" scale="left" name="u1"/>
+	<channel color="#6666ff" type="curve" scale="left" name="u2"/>
+	<channel color="#339966" type="curve" scale="left" name="u3"/>
+      </channels>
+    </graph>
+  </graphs>
+</meteo>
