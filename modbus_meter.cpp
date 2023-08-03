@@ -9,8 +9,82 @@
 #include <arpa/inet.h>
 #include <cstring>
 #include <format.h>
+#include <fstream>
 
 namespace powermeter {
+
+/**
+ * \brief Parse the field information
+ *
+ * \param filename	the name of the file containing the information
+ */
+void	modbus_meter::parsefields(const std::string& filename) {
+	std::ifstream	in(filename.c_str());
+	char	buffer[1024];
+	in.getline(buffer, sizeof(buffer));
+	while (!in.eof()) {
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "parsing: '%s'", buffer);
+		if (buffer[0] != '#') {
+			modrec_t	record;
+			// name
+			char	*p = buffer;
+			char	*p2 = strchr(p, ',');
+			*p2 = '\0';
+			record.name = std::string(p);
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "name: %s",
+				record.name.c_str());
+			// unit
+			p = p2 + 1;
+			p2 = strchr(p, ',');
+			*p2 = '\0';
+			record.unit = std::stoi(p);
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "unit id: %hd",
+				record.unit);
+			// address
+			p = p2 + 1;
+			p2 = strchr(p, ',');
+			*p2 = '\0';
+			record.address = std::stoi(p);
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "address: %hd",
+				record.address);
+			// type
+			p = p2 + 1;
+			p2 = strchr(p, ',');
+			*p2 = '\0';
+			std::string	tpname(p);
+			record.type = m_uint16;
+			if (tpname == "int16") {
+				record.type = m_int16;
+			}
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "type: %d",
+				record.type);
+			// scalefactor
+			p = p2 + 1;
+			p2 = strchr(p, ',');
+			*p2 = '\0';
+			record.scalefactor = std::stof(p);
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "scalefactor: %f",
+				record.scalefactor);
+			// op
+			p = p2 + 1;
+			std::string	opname(p);
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "op: '%s'",
+				opname.c_str());
+			record.op = m_average;
+			if (opname == "min") {
+				record.op = m_min;
+			}
+			if (opname == "max") {
+				record.op = m_max;
+			}
+			// store the record
+			datatypes.push_back(record);
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "added type '%s'",
+				record.name.c_str());
+		}
+		in.getline(buffer, sizeof(buffer));
+	}
+}
 
 /**
  * \brief Construct a modbus power meter
@@ -20,6 +94,12 @@ namespace powermeter {
  */
 modbus_meter::modbus_meter(const configuration& config, messagequeue& queue)
 	: meter(config, queue) {
+	// find the file name for the datatypes
+	std::string	filename = config.stringvalue("datafields");
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "field configuration: %s",
+		filename.c_str());
+	parsefields(filename);
+
 	// get the host name of the meter
 	std::string	hostname = config.stringvalue("meterhostname",
 		"localhost");
@@ -67,6 +147,9 @@ modbus_meter::modbus_meter(const configuration& config, messagequeue& queue)
 	}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "successfully connected to %s:%d", 
 		hostname.c_str(), port);
+
+	// start the thread
+	startthread();
 }
 
 /**
@@ -140,13 +223,63 @@ message	modbus_meter::integrate() {
 			throw std::runtime_error(msg);
 		}
 
+#if 0
 		// get a new packet
 		// XXX get a packet
+		unsigned short	data1[12];
+		modbus_set_slave(mb, 100);
+		modbus_read_registers(mb, 808, 12, data1);
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "PV output: %hu, %hu, %hu",
+			data1[0], data1[1], data1[2]);
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "PV input: %hu, %hu, %hu",
+			data1[3], data1[4], data1[5]);
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "consumption: %hu, %hu, %hu",
+			data1[9], data1[10], data1[11]);
+
+		short	grid[3];
+		modbus_read_registers(mb, 820, 3, (unsigned short*)grid);
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "grid: %hd, %hd, %hd",
+			grid[0], grid[1], grid[2]);
+
+		unsigned short	battery[7];
+		modbus_read_registers(mb, 840, 7, battery);
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "battery: voltage %.1f, current %.1f, power %hd, charge %hu, state %hu, ah %.1f, time to go %.0f",
+			battery[0] / 10.,
+			((short)battery[1]) / 10.,
+			(short)battery[2],
+			battery[3],
+			battery[4],
+			- battery[5] / 10.,
+			battery[6] * 100.);
+#endif
 
 		// end time for this integration step
-		std::chrono::duration<float>    delta(std::chrono::system_clock::now() - previous);
-		//debug(LOG_DEBUG, DEBUG_LOG, 0, "delta: %.3f", delta.count());
+		std::chrono::duration<float>    delta(
+			std::chrono::system_clock::now() - previous);
+		debug(LOG_DEBUG, DEBUG_LOG, 0, "delta: %.3f", delta.count());
 		previous = std::chrono::system_clock::now();
+
+		// read the data
+		for (auto i = datatypes.begin(); i != datatypes.end(); i++) {
+			unsigned short	u;
+			modbus_set_slave(mb, i->unit);
+			modbus_read_registers(mb, i->address, 1, &u);
+			float	value = 0.;
+			if (m_uint16 == i->type) {
+				value = u * i->scalefactor;
+			}
+			if (m_int16 == i->type) {
+				value = ((short)u) * i->scalefactor;
+			}
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "%s -> %.1f",
+				i->name.c_str(), value);
+			if (i->op == m_average) {
+				result.accumulate(delta, i->name, value);
+			}
+			if (i->op == m_max) {
+				result.update(i->name, value);
+			}
+		}
 
 		//debug(LOG_DEBUG, DEBUG_LOG, 0, "processing a packet");
 		counter++;
@@ -158,7 +291,18 @@ message	modbus_meter::integrate() {
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "duration was %.6f", d);
 
 	// finalize the message
-
+	float   factor = 1. / d;
+	result.finalize("pv.prms_phase1", factor);
+	result.finalize("pv.prms_phase2", factor);
+	result.finalize("pv.prms_phase3", factor);
+	result.finalize("consumption.prms_phase1", factor);
+	result.finalize("consumption.prms_phase2", factor);
+	result.finalize("consumption.prms_phase3", factor);
+	result.finalize("grid.prms_phase1", factor);
+	result.finalize("grid.prms_phase2", factor);
+	result.finalize("grid.prms_phase3", factor);
+	result.finalize("battery.power", factor);
+	result.finalize("battery.charge", factor);
 
 	// return the message
 	return result;
