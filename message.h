@@ -26,6 +26,9 @@ public:
 	void	accumulate(const std::chrono::duration<float>& duration,
 			const std::string& name,
 			const float value);
+	void	accumulate_signed(const std::chrono::duration<float>& duration,
+			const std::string& name,
+			const float value);
 	void	update(const std::string& name, const float value);
 	void	finalize(const std::string& name, float factor);
 };

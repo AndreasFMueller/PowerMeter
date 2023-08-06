@@ -29,9 +29,8 @@ bool	message::has(const std::string& name) {
 
 void	message::accumulate(const std::chrono::duration<float>& duration,
 		const std::string& name, const float value) {
-	//debug(LOG_DEBUG, DEBUG_LOG, 0, "accumulate %s -> %.3f", name.c_str(),
-	//	value);
-	//std::chrono::duration<float>	d = duration;
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "accumulate %s -> %.3f", name.c_str(),
+		value);
 	float	ivalue = value * duration.count();
 	std::map<std::string, float>::const_iterator	i = find(name);
 	if (i == end()) {
@@ -39,6 +38,15 @@ void	message::accumulate(const std::chrono::duration<float>& duration,
 	} else {
 		operator[](name) = i->second + ivalue;
 	}
+}
+
+void	message::accumulate_signed(const std::chrono::duration<float>& duration,
+		const std::string& name, const float value) {
+	std::string	suffix = (value > 0) ? std::string("_pos")
+					     : std::string("_neg");
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "accumulate in %s: %.1f",
+		(name + suffix).c_str(), value);
+	accumulate(duration, name + suffix, value);
 }
 
 void	message::update(const std::string& name, const float value) {

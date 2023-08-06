@@ -15,10 +15,10 @@ namespace powermeter {
 class modbus_meter : public meter {
 public:
 	typedef enum {
-		m_uint16, m_int16
+		m_uint16, m_int16, m_phases
 	} datatype_t;
 	typedef enum {
-		m_average, m_max, m_min
+		m_average, m_max, m_min, m_signed
 	} operator_t;
 	typedef struct {
 		//meteoname,unit,address,type,scalefactor,operator
@@ -33,6 +33,9 @@ private:
 	modbus_t	*mb;
 	std::list<modrec_t>	datatypes;
 	void	parsefields(const std::string& filename);
+	float	get(const modrec_t modrec);
+	float	get_phases(const modrec_t modrec);
+	const std::list<modrec_t>::const_iterator	byname(const std::string& name);
 protected:
 	virtual message integrate();
 public:

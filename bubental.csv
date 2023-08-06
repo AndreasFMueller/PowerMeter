@@ -8,5 +8,6 @@ consumption.prms_phase3,100,819,uint16,1,average
 grid.prms_phase1,100,820,int16,1,average
 grid.prms_phase2,100,821,int16,1,average
 grid.prms_phase3,100,822,int16,1,average
+grid.prms,0,0,phases,0,signed
 battery.power,100,842,int16,1,average
 battery.charge,100,843,uint16,1,average

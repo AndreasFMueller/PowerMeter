@@ -10,6 +10,7 @@
 #include <cstring>
 #include <format.h>
 #include <fstream>
+#include <algorithm>
 
 namespace powermeter {
 
@@ -56,6 +57,9 @@ void	modbus_meter::parsefields(const std::string& filename) {
 			if (tpname == "int16") {
 				record.type = m_int16;
 			}
+			if (tpname == "phases") {
+				record.type = m_phases;
+			}
 			debug(LOG_DEBUG, DEBUG_LOG, 0, "type: %d",
 				record.type);
 			// scalefactor
@@ -76,6 +80,9 @@ void	modbus_meter::parsefields(const std::string& filename) {
 			}
 			if (opname == "max") {
 				record.op = m_max;
+			}
+			if (opname == "signed") {
+				record.op = m_signed;
 			}
 			// store the record
 			datatypes.push_back(record);
@@ -160,6 +167,43 @@ modbus_meter::~modbus_meter() {
 	modbus_free(mb);
 }
 
+const std::list<modbus_meter::modrec_t>::const_iterator	modbus_meter::byname(const std::string& name) {
+	return	std::find_if(datatypes.begin(), datatypes.end(),
+		[name](const modrec_t m) -> bool {
+			return (m.name == name);
+		}
+	);
+}
+
+float	modbus_meter::get(const modrec_t modrec) {
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "getting %s", modrec.name.c_str());
+	if (modrec.type == m_phases) {
+		return get_phases(modrec);
+	}
+	modbus_set_slave(mb, modrec.unit);
+	unsigned short	u;
+	modbus_read_registers(mb, modrec.address, 1, &u);
+	float	value = 0.;
+	if (m_uint16 == modrec.type) {
+		value = u * modrec.scalefactor;
+	}
+	if (m_int16 == modrec.type) {
+		value = ((short)u) * modrec.scalefactor;
+	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "%s -> %.1f",
+		modrec.name.c_str(), value);
+	return value;
+}
+
+float	modbus_meter::get_phases(const modrec_t modrec) {
+	float	phase1 = get(*byname(modrec.name + "_phase1"));
+	float	phase2 = get(*byname(modrec.name + "_phase2"));
+	float	phase3 = get(*byname(modrec.name + "_phase3"));
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "sum of three phases: "
+		"%.0f + %.0f + %.0f", phase1, phase2, phase3);
+	return phase1 + phase2 + phase3;
+}
+
 message	modbus_meter::integrate() {
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "integrate a message");
 	std::unique_lock<std::mutex>    lock(_mutex);
@@ -194,6 +238,16 @@ message	modbus_meter::integrate() {
 	message result(start);
 	std::chrono::system_clock::time_point   previous = start;
 
+	// ensure that pos/neg fields are always present
+	for (auto i = datatypes.begin(); i != datatypes.end(); i++) {
+		if (i->op == m_signed) {
+			result.accumulate(std::chrono::seconds(0),
+				i->name + "_pos", 0.);
+			result.accumulate(std::chrono::seconds(0),
+				i->name + "_neg", 0.);
+		}
+	}
+
 	// iterate until the end
 	std::chrono::system_clock::time_point   now;
 	int     counter = 0;
@@ -223,36 +277,6 @@ message	modbus_meter::integrate() {
 			throw std::runtime_error(msg);
 		}
 
-#if 0
-		// get a new packet
-		// XXX get a packet
-		unsigned short	data1[12];
-		modbus_set_slave(mb, 100);
-		modbus_read_registers(mb, 808, 12, data1);
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "PV output: %hu, %hu, %hu",
-			data1[0], data1[1], data1[2]);
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "PV input: %hu, %hu, %hu",
-			data1[3], data1[4], data1[5]);
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "consumption: %hu, %hu, %hu",
-			data1[9], data1[10], data1[11]);
-
-		short	grid[3];
-		modbus_read_registers(mb, 820, 3, (unsigned short*)grid);
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "grid: %hd, %hd, %hd",
-			grid[0], grid[1], grid[2]);
-
-		unsigned short	battery[7];
-		modbus_read_registers(mb, 840, 7, battery);
-		debug(LOG_DEBUG, DEBUG_LOG, 0, "battery: voltage %.1f, current %.1f, power %hd, charge %hu, state %hu, ah %.1f, time to go %.0f",
-			battery[0] / 10.,
-			((short)battery[1]) / 10.,
-			(short)battery[2],
-			battery[3],
-			battery[4],
-			- battery[5] / 10.,
-			battery[6] * 100.);
-#endif
-
 		// end time for this integration step
 		std::chrono::duration<float>    delta(
 			std::chrono::system_clock::now() - previous);
@@ -261,23 +285,15 @@ message	modbus_meter::integrate() {
 
 		// read the data
 		for (auto i = datatypes.begin(); i != datatypes.end(); i++) {
-			unsigned short	u;
-			modbus_set_slave(mb, i->unit);
-			modbus_read_registers(mb, i->address, 1, &u);
-			float	value = 0.;
-			if (m_uint16 == i->type) {
-				value = u * i->scalefactor;
-			}
-			if (m_int16 == i->type) {
-				value = ((short)u) * i->scalefactor;
-			}
-			debug(LOG_DEBUG, DEBUG_LOG, 0, "%s -> %.1f",
-				i->name.c_str(), value);
+			float	value = get(*i);
 			if (i->op == m_average) {
 				result.accumulate(delta, i->name, value);
 			}
 			if (i->op == m_max) {
 				result.update(i->name, value);
+			}
+			if (i->op == m_signed) {
+				result.accumulate_signed(delta, i->name, value);
 			}
 		}
 
@@ -292,17 +308,19 @@ message	modbus_meter::integrate() {
 
 	// finalize the message
 	float   factor = 1. / d;
-	result.finalize("pv.prms_phase1", factor);
-	result.finalize("pv.prms_phase2", factor);
-	result.finalize("pv.prms_phase3", factor);
-	result.finalize("consumption.prms_phase1", factor);
-	result.finalize("consumption.prms_phase2", factor);
-	result.finalize("consumption.prms_phase3", factor);
-	result.finalize("grid.prms_phase1", factor);
-	result.finalize("grid.prms_phase2", factor);
-	result.finalize("grid.prms_phase3", factor);
-	result.finalize("battery.power", factor);
-	result.finalize("battery.charge", factor);
+	for (auto i = datatypes.begin(); i != datatypes.end(); i++) {
+		switch (i->op) {
+		case m_average:
+			result.finalize(i->name, factor);
+			break;
+		case m_signed:
+			result.finalize(i->name + "_pos", factor);
+			result.finalize(i->name + "_neg", factor);
+			break;
+		default:
+			break;
+		}
+	}
 
 	// return the message
 	return result;
