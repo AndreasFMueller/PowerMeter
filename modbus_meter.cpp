@@ -93,6 +93,62 @@ void	modbus_meter::parsefields(const std::string& filename) {
 	}
 }
 
+
+void	modbus_meter::connect_common() {
+	// get the ip address of the modbus device
+	struct hostent	*hp = gethostbyname(_hostname.c_str());
+	if (NULL == hp) {
+		std::string	msg = stringprintf("cannot resolve '%s'",
+			_hostname.c_str());
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg);
+		throw std::runtime_error(msg);
+	}
+
+	// check that we have an address
+	if (NULL == hp->h_addr) {
+		std::string	msg = stringprintf("no address for '%s'",
+			_hostname.c_str());
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+	
+	// convert IP address to string
+	struct in_addr	*ia = (struct in_addr *) hp->h_addr_list[0];
+	char	*ip = strdup(inet_ntoa(*ia));
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "connecting to IP %s", ip);
+
+	// initialize the modbus device
+	mb = modbus_new_tcp(ip, _port);
+	if (NULL == mb) {
+		free(ip);
+		std::string	msg = stringprintf("cannot create modbus device");
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+	free(ip);
+
+	// connect to the meter
+	if (modbus_connect(mb) < 0) {
+		debug(LOG_ERR, DEBUG_LOG, 0, "cannot connect to the meter");
+		throw std::runtime_error("cannot connect");
+	}
+	debug(LOG_DEBUG, DEBUG_LOG, 0, "successfully connected to %s:%d", 
+		_hostname.c_str(), _port);
+}
+
+void	modbus_meter::connect(const std::string& hostname, int port) {
+	_hostname = hostname;
+	_port = port;
+	connect_common();
+}
+
+void	modbus_meter::reconnect() {
+	modbus_close(mb);
+	modbus_free(mb);
+	mb = NULL;
+	connect_common();
+}
+
 /**
  * \brief Construct a modbus power meter
  *
@@ -111,49 +167,12 @@ modbus_meter::modbus_meter(const configuration& config, messagequeue& queue)
 	std::string	hostname = config.stringvalue("meterhostname",
 		"localhost");
 
-	// get the ip address of the modbus device
-	struct hostent	*hp = gethostbyname(hostname.c_str());
-	if (NULL == hp) {
-		std::string	msg = stringprintf("cannot resolve '%s'",
-			hostname.c_str());
-		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg);
-		throw std::runtime_error(msg);
-	}
-
-	// check that we have an address
-	if (NULL == hp->h_addr) {
-		std::string	msg = stringprintf("no address for '%s'",
-			hostname);
-		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
-		throw std::runtime_error(msg);
-	}
-	
-	// convert IP address to string
-	struct in_addr	*ia = (struct in_addr *) hp->h_addr_list[0];
-	char	*ip = strdup(inet_ntoa(*ia));
-	debug(LOG_DEBUG, DEBUG_LOG, 0, "connecting to IP %s", ip);
-
 	// get the port number from the configuration
 	int	port = config.intvalue("meterport", 502);
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "using port %d", port);
 
-	// initialize the modbus device
-	mb = modbus_new_tcp(ip, port);
-	if (NULL == mb) {
-		free(ip);
-		std::string	msg = stringprintf("cannot create");
-		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
-		throw std::runtime_error(msg);
-	}
-	free(ip);
-
-	// connect to the meter
-	if (modbus_connect(mb) < 0) {
-		debug(LOG_ERR, DEBUG_LOG, 0, "cannot connect to the meter");
-		throw std::runtime_error("cannot connect");
-	}
-	debug(LOG_DEBUG, DEBUG_LOG, 0, "successfully connected to %s:%d", 
-		hostname.c_str(), port);
+	// connect
+	connect(hostname, port);
 
 	// start the thread
 	startthread();
@@ -182,7 +201,14 @@ float	modbus_meter::get(const modrec_t modrec) {
 	}
 	modbus_set_slave(mb, modrec.unit);
 	unsigned short	u;
-	modbus_read_registers(mb, modrec.address, 1, &u);
+	if (modbus_read_registers(mb, modrec.address, 1, &u) < 0) {
+		debug(LOG_ERR, DEBUG_LOG, 0, "read failure, reconnecting");
+		reconnect();
+		if (modbus_read_registers(mb, modrec.address, 1, &u) < 0) {
+			debug(LOG_ERR, DEBUG_LOG, 0, "failure after reconnect");
+			throw std::runtime_error("failure to reconnect");
+		}
+	}
 	float	value = 0.;
 	if (m_uint16 == modrec.type) {
 		value = u * modrec.scalefactor;

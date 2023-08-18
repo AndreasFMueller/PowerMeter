@@ -1,5 +1,8 @@
 ChangeLog for the PowerMeter project
 
+20230818:
+	* complete the modbus meter
+
 20230521:
 	* add solivia parser
 

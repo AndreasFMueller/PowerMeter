@@ -29,6 +29,11 @@ public:
 		float		scalefactor;
 		operator_t	op;
 	}	modrec_t;
+	std::string	_hostname;
+	int	_port;
+	void	connect(const std::string& hostname, int port);
+	void	reconnect();
+	void	connect_common();
 private:
 	modbus_t	*mb;
 	std::list<modrec_t>	datatypes;
