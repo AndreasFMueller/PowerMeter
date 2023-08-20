@@ -37,6 +37,7 @@ static struct option	longopts[] = {
 { "meterid",		required_argument,	NULL,		'i' },
 { "stationname",	required_argument,	NULL,		'S' },
 { "sensorname",		required_argument,	NULL,		's' },
+{ "timeout",		required_argument,	NULL,		'T' },
 { "version",		no_argument,		NULL,		'V' },
 { "foreground",		no_argument,		NULL,		'f' },
 { "simulate",		no_argument,		NULL,		'x' },
@@ -67,7 +68,8 @@ int	main(int argc, char *argv[]) {
 	debugthreads = 1;
 
 	// read parameters from the command line
-	while (EOF != (c = getopt_long(argc, argv, "c:dH:D:U:P:Q:S:s::m:p:i:Vxt:l",
+	while (EOF != (c = getopt_long(argc, argv,
+		"c:dH:D:U:P:Q:S:s::m:p:i:Vxt:T:l",
 		longopts, NULL)))
 		switch (c) {
 		case 'c':
@@ -106,6 +108,11 @@ int	main(int argc, char *argv[]) {
 			config.set("sensorname", optarg);
 			debug(LOG_DEBUG, DEBUG_LOG, 0, "sensorname: %s",
 				optarg);
+			break;
+		case 'T':
+			config.set("timeout", std::stoi(optarg));
+			debug(LOG_DEBUG, DEBUG_LOG, 0, "timeout: %d seconds",
+				config.intvalue("timeout"));
 			break;
 		case 'm':
 			config.set("meterhostname", optarg);

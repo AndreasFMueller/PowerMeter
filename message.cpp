@@ -104,7 +104,7 @@ void	messagequeue::submit(const message& m) {
 /**
  * \brief Extract a message from the queue
  */
-message	messagequeue::extract() {
+message	messagequeue::extract(const std::chrono::seconds& timeout) {
 	std::unique_lock<std::mutex>	lock(_mutex);
 	while (_active) {
 		if (size() > 0) {
@@ -116,7 +116,15 @@ message	messagequeue::extract() {
 			return result;
 		}
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "waiting for message");
-		_signal.wait(lock);
+		switch (_signal.wait_for(lock, std::chrono::seconds(80))) {
+		case std::cv_status::timeout:
+			debug(LOG_ERR, DEBUG_LOG, 0,
+				"timeout waiting for new message");
+			abort();
+			break;
+		default:
+			break;
+		}
 	}
 	throw std::runtime_error("queue terminated");
 }

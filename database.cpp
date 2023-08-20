@@ -17,8 +17,9 @@ database::database(const configuration& config,
 	  _dbname(config.stringvalue("dbname")),
 	  _dbuser(config.stringvalue("dbuser")),
 	  _dbpassword(config.stringvalue("dbpassword")),
-	  _dbport(config.intvalue("dbport")),
+	  _dbport(config.intvalue("dbport", 3307)),
 	  _stationname(config.stringvalue("stationname")),
+	  _timeout(std::chrono::seconds(config.intvalue("timeout", 80))),
 	  _queue(queue) {
 	// create database connection
 	_mysql = mysql_init(NULL);
@@ -262,7 +263,7 @@ void	database::run() {
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "running database thread");
 	while (_active) {
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "waiting for message");
-		message	m = _queue.extract();
+		message	m = _queue.extract(_timeout);
 		// send the message to the database
 		debug(LOG_DEBUG, DEBUG_LOG, 0, "storing message");
 		store(m);

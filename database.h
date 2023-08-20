@@ -39,6 +39,7 @@ public:
 	char	fieldid(const std::string& fieldname) const;
 private:
 	// the queue
+	std::chrono::seconds	_timeout;
 	messagequeue&	_queue;
 
 	// processing thread

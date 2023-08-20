@@ -46,7 +46,7 @@ public:
 	messagequeue();
 	~messagequeue();
 	void	submit(const message& m);
-	message	extract();
+	message	extract(const std::chrono::seconds& timeout);
 	status	wait(const std::chrono::duration<float>& howlong);
 };
 
