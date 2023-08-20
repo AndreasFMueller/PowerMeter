@@ -279,9 +279,10 @@ extern "C" void vdebug(int loglevel, const char *file, int line,
 
 	// find the current thread id if necessary
 	if (debugthreads) {
-		snprintf(threadid, sizeof(threadid), "/%d", thread_helper::id());
+		snprintf(threadid, sizeof(threadid), "[%d/%d]", getpid(),
+			thread_helper::id());
 	} else {
-		threadid[0] = '\0';
+		snprintf(threadid, sizeof(threadid), "[%d]", getpid());
 	}
 
 	// handle syslog case, where we have a much simpler 

@@ -121,7 +121,8 @@ void	modbus_meter::connect_common() {
 	mb = modbus_new_tcp(ip, _port);
 	if (NULL == mb) {
 		free(ip);
-		std::string	msg = stringprintf("cannot create modbus device");
+		std::string	msg = stringprintf("cannot create modbus "
+			"device: %s", modbus_strerror(errno));
 		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
 		throw std::runtime_error(msg);
 	}
@@ -129,8 +130,16 @@ void	modbus_meter::connect_common() {
 
 	// connect to the meter
 	if (modbus_connect(mb) < 0) {
-		debug(LOG_ERR, DEBUG_LOG, 0, "cannot connect to the meter");
-		throw std::runtime_error("cannot connect");
+		std::string	msg = stringprintf("cannot connect to the "
+			"meter: %s", modbus_strerror(errno));
+		debug(LOG_ERR, DEBUG_LOG, 0, "%s", msg.c_str());
+		throw std::runtime_error(msg);
+	}
+
+	// set the response timeout
+	if (modbus_set_response_timeout(mb, 1, 0) < 0) {
+		debug(LOG_ERR, DEBUG_LOG, 0, "cannot set timeout: %s",
+			modbus_strerror(errno));
 	}
 	debug(LOG_DEBUG, DEBUG_LOG, 0, "successfully connected to %s:%d", 
 		_hostname.c_str(), _port);
@@ -199,13 +208,19 @@ float	modbus_meter::get(const modrec_t modrec) {
 	if (modrec.type == m_phases) {
 		return get_phases(modrec);
 	}
-	modbus_set_slave(mb, modrec.unit);
+	if (modbus_set_slave(mb, modrec.unit) < 0) {
+		debug(LOG_ERR, DEBUG_LOG, 0, "cannot set unit id: %s",
+			modbus_strerror(errno));
+	}
 	unsigned short	u;
 	if (modbus_read_registers(mb, modrec.address, 1, &u) < 0) {
-		debug(LOG_ERR, DEBUG_LOG, 0, "read failure, reconnecting");
+		debug(LOG_ERR, DEBUG_LOG, 0, "read failure (%s), reconnecting",
+			modbus_strerror(errno));
 		reconnect();
 		if (modbus_read_registers(mb, modrec.address, 1, &u) < 0) {
-			debug(LOG_ERR, DEBUG_LOG, 0, "failure after reconnect");
+			debug(LOG_ERR, DEBUG_LOG, 0,
+				"failure after reconnect: %s",
+				modbus_strerror(errno));
 			throw std::runtime_error("failure to reconnect");
 		}
 	}
